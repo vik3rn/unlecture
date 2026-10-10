@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+/* Design tokens. All text/background pairs meet WCAG 2.1 AA contrast. */
+:root {
+  --bg: #f7f7fb;
+  --surface: #ffffff;
+  --ink: #14152b;
+  --muted: #4b4f6b;
+  --line: #dcdde8;
+  --accent: #4338ca;
+  --accent-hover: #3730a3;
+  --accent-ink: #ffffff;
+  --accent-soft: #eceafd;
+  --danger: #b42318;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e0f1a;
+    --surface: #171828;
+    --ink: #eef0fb;
+    --muted: #a9adc6;
+    --line: #2c2e45;
+    --accent: #a5b4fc;
+    --accent-hover: #c7d2fe;
+    --accent-ink: #14152b;
+    --accent-soft: #23244a;
+    --danger: #fda29b;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+  }
+
+  /* 16px text stops iOS from zooming in on focus; 44px min touch target. */
+  .field {
+    @apply block min-h-11 w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-base text-ink placeholder:text-muted/70;
+  }
+  .field:focus {
+    @apply border-accent outline-none ring-3 ring-accent/30;
+  }
+
+  .btn-primary {
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-5 py-2.5 text-base font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70;
+  }
+  .btn-secondary {
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 font-medium transition-colors hover:border-accent hover:text-accent;
+  }
+  .btn-ghost {
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 font-medium text-muted transition-colors hover:bg-accent-soft hover:text-ink;
+  }
+
+  .skip-link {
+    @apply sr-only;
+  }
+  .skip-link:focus {
+    @apply not-sr-only fixed top-2 left-2 z-50 rounded-lg bg-accent px-4 py-2 text-accent-ink;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
