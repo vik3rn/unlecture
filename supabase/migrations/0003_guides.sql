@@ -32,6 +32,9 @@ create policy "guides_select_logged_in" on public.guides
 revoke all on table public.guides from anon;
 revoke all on table public.guides from authenticated;
 grant select on table public.guides to authenticated;
+-- The free preview (/guides/[slug]) reads guides on the server with the secret key (role service_role).
+-- With "Automatically expose new tables" OFF, service_role gets no table rights by default, so grant read only.
+grant select on table public.guides to service_role;
 
 -- ─────────────────────────────────────────────────────────────
 -- 2. Progress: quiz answers and "done" marks, one row per user and guide
