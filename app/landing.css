@@ -8,7 +8,8 @@
 .lp {
   --bg: #f5f3ec; --bg-2: #ebe8de; --card: #fffdf8; --ink: #1c2130; --ink-2: #4b5365; --ink-3: #5d6473; --line: #d9d5c8;
   --accent: #2c5bd1; --accent-ink: #1f46ad; --accent-soft: #e2e9fb; --on-accent: #ffffff;
-  --accent-2: #e0662f; --accent-2-ink: #a8431a; --accent-2-soft: #fbe8dd;
+  --accent-2: #f59a5c; --accent-2-ink: #9c4317; --accent-2-soft: #fdebdf;
+  --accent-fill: #2c5bd1; --accent-fill-hover: #1f46ad; --on-accent-fill: #ffffff;
   --ok: #17704a; --ok-soft: #def3e8; --on-ok: #ffffff; --track: #ebe8de; --chip: #ebe8de;
   --shadow: 0 8px 24px rgba(30, 30, 40, 0.07);
   --shadow-lg: 0 28px 60px -30px rgba(30, 40, 80, 0.35);
@@ -27,7 +28,8 @@
   .lp {
     --bg: #121826; --bg-2: #1a2232; --card: #1b2435; --ink: #eef1f6; --ink-2: #aab3c4; --ink-3: #8f98aa; --line: rgba(255, 255, 255, 0.13);
     --accent: #7b9cff; --accent-ink: #a9bdff; --accent-soft: rgba(123, 156, 255, 0.15); --on-accent: #0f1522;
-    --accent-2: #ff9a62; --accent-2-ink: #ffb68a; --accent-2-soft: rgba(255, 154, 98, 0.14);
+    --accent-2: #f59a5c; --accent-2-ink: #f8b38a; --accent-2-soft: rgba(245, 154, 92, 0.14);
+    --accent-fill: #2c5bd1; --accent-fill-hover: #3a68dd; --on-accent-fill: #ffffff;
     --ok: #5ccf94; --ok-soft: rgba(92, 207, 148, 0.15); --on-ok: #0f1522; --track: rgba(255, 255, 255, 0.1); --chip: #2a3346;
     --shadow: none; --shadow-lg: none; --cta-shadow: none;
   }
@@ -58,9 +60,9 @@
 .lp .lede { margin: 18px 0 0; max-width: 34em; font-size: 18px; line-height: 1.6; color: var(--ink-2); }
 .lp .act { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 28px; }
 .lp .cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 13px 24px;
-  border-radius: 14px; background: var(--accent); color: var(--on-accent); font-size: 18px; font-weight: 700; line-height: 1.3;
+  border-radius: 14px; background: var(--accent-fill); color: var(--on-accent-fill); font-size: 18px; font-weight: 700; line-height: 1.3;
   text-align: center; text-wrap: balance; text-decoration: none; box-shadow: var(--cta-shadow); transition: background-color 0.2s, transform 0.2s; }
-.lp .cta:hover { background: var(--accent-ink); color: var(--on-accent); }
+.lp .cta:hover { background: var(--accent-fill-hover); color: var(--on-accent-fill); }
 .lp .cta:active { transform: translateY(1px); }
 .lp .cta:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 14px; }
 .lp .cta .arr { transition: transform 0.2s; }

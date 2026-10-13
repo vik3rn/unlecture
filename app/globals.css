@@ -16,12 +16,16 @@
   --accent-hover: #1f46ad;
   --accent-ink: #ffffff;
   --accent-soft: #e2e9fb;
+  /* Filled controls use the logo blue in both modes. */
+  --accent-fill: #2c5bd1;
+  --accent-fill-hover: #1f46ad;
+  --on-accent-fill: #ffffff;
   --danger: #b42318;
   --danger-soft: #fbe5e2;
   --ok: #17704a;
   --ok-soft: #def3e8;
   --warn: #a8431a;
-  --warn-soft: #fbe8dd;
+  --warn-soft: #fdebdf;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -36,11 +40,14 @@
     --accent-hover: #a9bdff;
     --accent-ink: #0f1522;
     --accent-soft: #263252;
+    --accent-fill: #2c5bd1;
+    --accent-fill-hover: #3a68dd;
+    --on-accent-fill: #ffffff;
     --danger: #ff8b7c;
     --danger-soft: #3a2730;
     --ok: #5ccf94;
     --ok-soft: #1d3a33;
-    --warn: #ffb68a;
+    --warn: #f8b38a;
     --warn-soft: #3a2b25;
   }
 }
@@ -56,6 +63,9 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-fill: var(--accent-fill);
+  --color-accent-fill-hover: var(--accent-fill-hover);
+  --color-on-accent-fill: var(--on-accent-fill);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-ok: var(--ok);
@@ -92,7 +102,7 @@ body {
   }
 
   .btn-primary {
-    @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-5 py-2.5 text-base font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70;
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-accent-fill px-5 py-2.5 text-base font-semibold text-on-accent-fill transition-colors hover:bg-accent-fill-hover disabled:cursor-not-allowed disabled:opacity-70;
   }
   .btn-secondary {
     @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface px-4 py-2 font-medium transition-colors hover:border-accent hover:text-accent;
@@ -105,7 +115,7 @@ body {
     @apply sr-only;
   }
   .skip-link:focus {
-    @apply not-sr-only fixed top-2 left-2 z-50 rounded-lg bg-accent px-4 py-2 text-accent-ink;
+    @apply not-sr-only fixed top-2 left-2 z-50 rounded-lg bg-accent-fill px-4 py-2 text-on-accent-fill;
   }
 }
 

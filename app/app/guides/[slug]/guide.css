@@ -3,7 +3,8 @@
 .dg {
   --bg: #f5f3ec; --bg-2: #ebe8de; --card: #fffdf8; --ink: #1c2130; --ink-2: #4b5365; --ink-3: #5d6473; --line: #d9d5c8;
   --accent: #2c5bd1; --accent-ink: #1f46ad; --accent-soft: #e2e9fb; --on-accent: #ffffff;
-  --accent-2: #e0662f; --accent-2-ink: #a8431a; --accent-2-soft: #fbe8dd;
+  --accent-2: #f59a5c; --accent-2-ink: #9c4317; --accent-2-soft: #fdebdf;
+  --accent-fill: #2c5bd1; --accent-fill-hover: #1f46ad; --on-accent-fill: #ffffff;
   --ok: #17704a; --ok-soft: #def3e8; --on-ok: #ffffff; --bad: #b5322a; --bad-soft: #fbe5e2; --on-bad: #ffffff;
   --shadow: 0 8px 24px rgba(30, 30, 40, 0.07);
   --serif: Georgia, "Times New Roman", serif; --math: "STIX Two Text", "Cambria Math", "Times New Roman", serif;
@@ -17,7 +18,8 @@
   .dg {
     --bg: #121826; --bg-2: #1a2232; --card: #1b2435; --ink: #eef1f6; --ink-2: #aab3c4; --ink-3: #8f98aa; --line: rgba(255, 255, 255, 0.13);
     --accent: #7b9cff; --accent-ink: #a9bdff; --accent-soft: rgba(123, 156, 255, 0.15); --on-accent: #0f1522;
-    --accent-2: #ff9a62; --accent-2-ink: #ffb68a; --accent-2-soft: rgba(255, 154, 98, 0.14);
+    --accent-2: #f59a5c; --accent-2-ink: #f8b38a; --accent-2-soft: rgba(245, 154, 92, 0.14);
+    --accent-fill: #2c5bd1; --accent-fill-hover: #3a68dd; --on-accent-fill: #ffffff;
     --ok: #5ccf94; --ok-soft: rgba(92, 207, 148, 0.15); --on-ok: #0f1522; --bad: #ff8b7c; --bad-soft: rgba(255, 139, 124, 0.15); --on-bad: #0f1522;
     --shadow: none;
   }
@@ -102,7 +104,7 @@
 .dg .chaps button { border: 1px solid var(--line); background: var(--bg); border-radius: 99px; padding: 4px 11px; font-size: 13px; color: var(--ink-2); cursor: pointer; min-height: 32px; }
 .dg .chaps button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-ink); }
 .dg .chaps button:disabled { cursor: default; }
-.dg .chaps button.cur { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.dg .chaps button.cur { background: var(--accent-fill); border-color: var(--accent); color: var(--on-accent-fill); }
 .dg .chaps button .ts { font-variant-numeric: tabular-nums; margin-right: 6px; }
 
 .dg h4.sub { margin: 26px 0 10px; font: 800 13px/1 var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); display: flex; align-items: center; gap: 10px; }
@@ -123,7 +125,7 @@
 .dg .opt:hover { border-color: var(--accent); }
 .dg .opt .l { flex: none; width: 26px; height: 26px; border-radius: 7px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
 .dg .opt.sel { border-color: var(--accent); background: var(--accent-soft); }
-.dg .opt.sel .l { background: var(--accent); color: var(--on-accent); }
+.dg .opt.sel .l { background: var(--accent-fill); color: var(--on-accent-fill); }
 .dg .opt .nt { display: none; font-size: 13px; font-weight: 650; margin-top: 4px; }
 .dg .q.checked .opt { cursor: default; }
 .dg .q.checked .opt .nt { display: block; }
@@ -137,7 +139,7 @@
 .dg .q.checked .opt:not(.right):not(.wrongpick) .l { background: var(--ink-3); }
 .dg .q.checked .opt.missed::after { content: "missed"; position: absolute; top: -10px; right: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--on-ok); background: var(--ok); padding: 2px 7px; border-radius: 6px; }
 .dg .qa { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
-.dg .btn { border: 0; border-radius: 10px; padding: 9px 16px; font-weight: 700; cursor: pointer; background: var(--accent); color: var(--on-accent); min-height: 40px; }
+.dg .btn { border: 0; border-radius: 10px; padding: 9px 16px; font-weight: 700; cursor: pointer; background: var(--accent-fill); color: var(--on-accent-fill); min-height: 40px; }
 .dg .btn:disabled { opacity: 0.4; cursor: default; }
 .dg .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--ink-2); }
 .dg .score { font-weight: 750; font-size: 14px; }
