@@ -45,6 +45,13 @@
   border: 1px solid var(--line); background: var(--card); color: var(--ink); }
 .dg .iconbtn { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 14px; }
 
+/* free preview (no account) */
+.dg .guestbar { margin: 0; padding: 10px 22px; background: var(--accent-2-soft); color: var(--ink); border-bottom: 1px solid var(--line); font-size: 15px; text-align: center; }
+.dg .guestbar a, .dg .lockmsg a, .dg .hero p a { color: var(--accent-ink); font-weight: 700; }
+.dg section.part.locked { padding-bottom: 20px; }
+.dg .lockmsg { display: flex; gap: 10px; align-items: flex-start; margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--bg); border: 1px dashed var(--line); color: var(--ink-2); font-size: 15px; }
+.dg nav.side a .lk { margin-left: auto; font-size: 12px; }
+
 /* layout */
 .dg .wrap { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 34px; max-width: 1280px; margin: 0 auto; padding: 26px 22px 80px; }
 .dg nav.side { position: sticky; top: 76px; align-self: start; max-height: calc(100vh - 96px); overflow: auto; padding-right: 6px; }
@@ -81,7 +88,7 @@
 .dg .done-toggle { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 14px; color: var(--ink-2); cursor: pointer; user-select: none; min-height: 44px; }
 .dg .done-toggle input { width: 18px; height: 18px; accent-color: var(--ok); }
 .dg .vid { margin: 18px 0 10px; border-radius: 14px; overflow: hidden; background: #000; aspect-ratio: 16 / 9; position: relative; }
-.dg .vid iframe { width: 100%; height: 100%; display: block; border: 0; }
+.dg .vid iframe, .dg .vid video { width: 100%; height: 100%; display: block; border: 0; background: #000; }
 .dg .vid .play { width: 100%; height: 100%; display: grid; place-items: center; text-align: center; cursor: pointer; border: 0; color: #fff;
   background: radial-gradient(circle at 50% 45%, #26304a, #0d111b 70%); }
 .dg .vid .play .circle { display: grid; place-items: center; width: 76px; height: 76px; margin: 0 auto; border-radius: 50%; background: rgba(255, 255, 255, 0.16); font-size: 28px; transition: background 0.2s; }

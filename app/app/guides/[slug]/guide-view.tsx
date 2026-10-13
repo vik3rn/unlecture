@@ -55,17 +55,22 @@ function Countdown({ exam }: { exam: string }) {
 }
 
 export function GuideView({
+  slug,
   guideId,
   title,
   summary,
   content,
   initialProgress,
+  guest = false,
 }: {
+  slug: string;
   guideId: string;
   title: string;
   summary: string;
   content: GuideContent;
   initialProgress: GuideProgress | null;
+  // Free preview without an account: answers live only in this tab and are never saved.
+  guest?: boolean;
 }) {
   const [progress, setProgress] = useState<GuideProgress>(() => initialProgress ?? EMPTY);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -87,6 +92,7 @@ export function GuideView({
       if (next === latest.current) return;
       latest.current = next;
       setProgress(next);
+      if (guest) return;
       setSaveState("saving");
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => {
@@ -94,7 +100,7 @@ export function GuideView({
         save();
       }, 800);
     },
-    [save],
+    [save, guest],
   );
 
   // Leaving the tab: save right away instead of waiting for the timer.
@@ -163,9 +169,15 @@ export function GuideView({
   return (
     <div className="dg">
       <header className="top">
-        <Link href="/app" className="back" aria-label="All guides">
-          ← Guides
-        </Link>
+        {guest ? (
+          <Link href="/" className="back">
+            ← Home
+          </Link>
+        ) : (
+          <Link href="/app" className="back" aria-label="All guides">
+            ← Guides
+          </Link>
+        )}
         <div className="brand">{brand}</div>
         {content.exam && <Countdown exam={content.exam} />}
         <div
@@ -207,6 +219,13 @@ export function GuideView({
           {saveText}
         </div>
       </header>
+      {guest && (
+        <p className="guestbar">
+          <b>Free preview: nothing you do here is saved.</b>{" "}
+          <Link href="/signup">Sign up free</Link> to open all {content.parts.length} parts and keep your quiz answers,
+          done marks and score.
+        </p>
+      )}
 
       <div className="wrap">
         <nav className="side" aria-label="Parts of this guide">
@@ -224,9 +243,15 @@ export function GuideView({
                   >
                     <span className="n">{p.n}</span>
                     <Html html={p.title} />
-                    <span className="ck" aria-label={progress.done[p.n] ? "done" : undefined}>
-                      ✓
-                    </span>
+                    {p.locked ? (
+                      <span className="lk" aria-label="locked">
+                        🔒
+                      </span>
+                    ) : (
+                      <span className="ck" aria-label={progress.done[p.n] ? "done" : undefined}>
+                        ✓
+                      </span>
+                    )}
                   </a>
                 );
               })}
@@ -238,10 +263,18 @@ export function GuideView({
           <div className="hero">
             <h1>{title}</h1>
             {summary && <p>{summary}</p>}
-            <p>
-              {content.parts.length} videos, {stats.total} exam-style questions and {stats.exercises} paper exercises in
-              one place. Work from top to bottom. Your progress is saved to your account.
-            </p>
+            {guest ? (
+              <p>
+                This is a free preview: the open part has its video, key points, quiz and paper exercises. Your answers
+                here are not saved. <Link href="/signup">Sign up free</Link> to open all {content.parts.length} parts and
+                keep your progress.
+              </p>
+            ) : (
+              <p>
+                {content.parts.length} videos, {stats.total} exam-style questions and {stats.exercises} paper exercises
+                in one place. Work from top to bottom. Your progress is saved to your account.
+              </p>
+            )}
             <ol className="steps">
               <li className="step">
                 <b>1 · Watch</b>Pause at every stop sign and solve on paper.
@@ -271,7 +304,11 @@ export function GuideView({
             <div key={u.unit}>
               <h2 className="unit">{u.unit}</h2>
               {u.parts.map((p) => (
-                <PartSection key={p.n} part={p} progress={progress} update={update} />
+                p.locked ? (
+                  <LockedPart key={p.n} part={p} />
+                ) : (
+                  <PartSection key={p.n} slug={slug} part={p} progress={progress} update={update} />
+                )
               ))}
             </div>
           ))}
@@ -314,13 +351,52 @@ export function GuideView({
   );
 }
 
-function PartSection({ part, progress, update }: { part: GuidePart; progress: GuideProgress; update: Update }) {
+function LockedPart({ part }: { part: GuidePart }) {
+  const id = `part-${part.n}`;
+  return (
+    <section id={id} data-part={part.n} className="part locked" aria-labelledby={`${id}-title`}>
+      <div className="ph">
+        <span className="pn">Part {part.n}</span>
+        <h3 id={`${id}-title`}>
+          <Html html={part.title} />
+        </h3>
+        <span className="dur">{part.dur}</span>
+      </div>
+      <p className="lockmsg">
+        <span aria-hidden="true">🔒</span>
+        <span>
+          The video, key points, quiz and paper exercises open with a free account.{" "}
+          <Link href="/signup">Sign up free</Link> or <Link href="/login">log in</Link>.
+        </span>
+      </p>
+    </section>
+  );
+}
+
+function PartSection({
+  slug,
+  part,
+  progress,
+  update,
+}: {
+  slug: string;
+  part: GuidePart;
+  progress: GuideProgress;
+  update: Update;
+}) {
   const id = `part-${part.n}`;
   const frame = useRef<HTMLIFrameElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
   const box = useRef<HTMLDivElement>(null);
-  const [src, setSrc] = useState<string | null>(null);
+  const [src, setSrc] = useState<string | null>(null); // YouTube embed
+  const [videoSrc, setVideoSrc] = useState<string | null>(null); // short-lived R2 link
+  const [fileFailed, setFileFailed] = useState(false);
+  const pendingSeek = useRef<number | null>(null);
+  const retried = useRef(false);
   const [chapter, setChapter] = useState(-1);
   const done = !!progress.done[part.n];
+  const useFile = !!part.file && !fileFailed;
+  const hasVideo = useFile || !!part.yt;
 
   const setDone = useCallback(
     (value: boolean) =>
@@ -334,24 +410,75 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
     [update, part.n],
   );
 
+  const followChapter = useCallback(
+    (now: number) => {
+      let idx = -1;
+      part.chapters.forEach(([start], i) => {
+        if (start <= now + 0.3) idx = i;
+      });
+      setChapter(idx);
+    },
+    [part.chapters],
+  );
+
   const send = (func: string, args: unknown[] = []) =>
     frame.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), YT_ORIGIN);
 
-  const seek = (t: number) => {
+  const startYouTube = (t: number) => {
     if (!part.yt) return;
-    box.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (!src) {
-      const origin = encodeURIComponent(window.location.origin);
-      setSrc(
-        `${YT_ORIGIN}/embed/${part.yt}?enablejsapi=1&rel=0&playsinline=1&autoplay=1&start=${Math.floor(t)}&origin=${origin}`,
-      );
-      return;
+    const origin = encodeURIComponent(window.location.origin);
+    setSrc(`${YT_ORIGIN}/embed/${part.yt}?enablejsapi=1&rel=0&playsinline=1&autoplay=1&start=${Math.floor(t)}&origin=${origin}`);
+  };
+
+  // Asks the server for a fresh link to this part's video (checks login / free preview).
+  const getLink = async () => {
+    try {
+      const r = await fetch(`/api/video?guide=${encodeURIComponent(slug)}&part=${part.n}`, { cache: "no-store" });
+      if (!r.ok) return null;
+      const { url } = (await r.json()) as { url?: unknown };
+      return typeof url === "string" && url.startsWith("https://") ? url : null;
+    } catch {
+      return null;
     }
+  };
+
+  const seek = async (t: number) => {
+    if (!hasVideo) return;
+    box.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (useFile) {
+      const v = video.current;
+      if (videoSrc && v) {
+        v.currentTime = t;
+        void v.play().catch(() => {});
+        return;
+      }
+      pendingSeek.current = t;
+      const url = await getLink();
+      if (url) return setVideoSrc(url);
+      setFileFailed(true); // no link: use YouTube instead if this part has it
+      return startYouTube(t);
+    }
+    if (!src) return startYouTube(t);
     send("seekTo", [t, true]);
     send("playVideo");
   };
 
-  // Follow the player: highlight the current chapter, and mark the part done when the video ends.
+  // The link expired or the file failed: get a new link once and carry on from the same spot.
+  const onVideoError = async () => {
+    const at = video.current?.currentTime ?? 0;
+    if (!retried.current) {
+      retried.current = true;
+      const url = await getLink();
+      if (url) {
+        pendingSeek.current = at;
+        return setVideoSrc(url);
+      }
+    }
+    setVideoSrc(null);
+    setFileFailed(true);
+  };
+
+  // YouTube player: highlight the current chapter, and mark the part done when the video ends.
   useEffect(() => {
     if (!src) return;
     const onMessage = (ev: MessageEvent) => {
@@ -364,19 +491,12 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
       }
       const info = (data as { info?: { currentTime?: unknown; playerState?: unknown } } | null)?.info;
       if (!info || typeof info !== "object") return;
-      if (typeof info.currentTime === "number") {
-        const now = info.currentTime;
-        let idx = -1;
-        part.chapters.forEach(([start], i) => {
-          if (start <= now + 0.3) idx = i;
-        });
-        setChapter(idx);
-      }
+      if (typeof info.currentTime === "number") followChapter(info.currentTime);
       if (info.playerState === 0) setDone(true);
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [src, part.chapters, setDone]);
+  }, [src, followChapter, setDone]);
 
   const qs = questionKeys(part).map(({ q, key }, i) => {
     const mock = /^(Q\d+)\.\s*/.exec(q.stem);
@@ -400,7 +520,25 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
       </div>
 
       <div ref={box} className="vid">
-        {src ? (
+        {videoSrc ? (
+          <video
+            ref={video}
+            src={videoSrc}
+            controls
+            autoPlay
+            playsInline
+            preload="metadata"
+            aria-label={`Part ${part.n} video`}
+            onLoadedMetadata={(e) => {
+              retried.current = false;
+              if (pendingSeek.current) e.currentTarget.currentTime = pendingSeek.current;
+              pendingSeek.current = null;
+            }}
+            onTimeUpdate={(e) => followChapter(e.currentTarget.currentTime)}
+            onEnded={() => setDone(true)}
+            onError={onVideoError}
+          />
+        ) : src ? (
           <iframe
             ref={frame}
             src={src}
@@ -414,7 +552,7 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
               )
             }
           />
-        ) : part.yt ? (
+        ) : hasVideo ? (
           <button type="button" className="play" onClick={() => seek(0)}>
             <span>
               <span className="circle" aria-hidden="true">
@@ -437,7 +575,7 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
             <button
               key={`${t}-${i}`}
               type="button"
-              disabled={!part.yt}
+              disabled={!hasVideo}
               onClick={() => seek(t)}
               aria-current={chapter === i ? "true" : undefined}
               className={chapter === i ? "cur" : undefined}
@@ -479,7 +617,7 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
                   return { ...p, quiz };
                 })
               }
-              onWatch={q.at !== null && part.yt ? () => seek(q.at as number) : null}
+              onWatch={q.at !== null && hasVideo ? () => seek(q.at as number) : null}
             />
           ))}
         </>

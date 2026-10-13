@@ -71,6 +71,7 @@
   font-size: 16px; color: var(--ink); }
 .lp .why b { color: var(--accent-2-ink); }
 .lp .login { margin: 16px 0 0; font-size: 15px; color: var(--ink-2); }
+.lp .login + .login { margin-top: 6px; }
 
 /* progress preview: a small version of the guide's top bar and part list */
 .lp .preview { margin: 0; min-width: 0; }

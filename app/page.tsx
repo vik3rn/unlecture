@@ -140,6 +140,10 @@ export default function Home() {
             <p className="login">
               Already have an account? <Link href="/login">Log in</Link> to see your saved progress.
             </p>
+            <p className="login">
+              Not ready to sign up? <Link href="/guides/dae-midterm">Try Part 0 without an account</Link>. Nothing is
+              saved there.
+            </p>
           </div>
           <ProgressPreview />
         </div>
@@ -214,7 +218,8 @@ export default function Home() {
               <LockIcon />
               <span>
                 <b>Opens after you sign up or log in.</b> Your account keeps every quiz answer, every part you mark done
-                and your score.
+                and your score. Part 0 is open as a <Link href="/guides/dae-midterm">free preview</Link> without an
+                account, but nothing is saved there.
               </span>
             </p>
           </article>

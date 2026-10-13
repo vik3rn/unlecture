@@ -38,6 +38,7 @@ An automated bot grades this app on its public Vercel URL, acting like a strange
 - **Main feature (core):** on `/app` the user types a course or topic they need a guide for in `core-input` and clicks `core-submit`. It is saved at once to their study list (`study_packs` table) and shown as a `core-item`. Saving never calls an AI API.
 - **Data:** private. Each user sees only their own study list and progress. Guides are visible to every logged-in user.
 - **Guide HTML:** guide text may hold a little HTML (formulas, tables). `lib/guides.ts` escapes every tag outside a short allowlist and every attribute except `class`; only a plain 11-character YouTube id reaches the embed URL.
+- **Free preview without an account:** `/guides/[slug]` (public, noindex) shows only the guide's preview parts (`content.preview`, default the first part); every other part is a locked card. Nothing is saved there. The server reads the guide with the secret key (`lib/supabase/admin.ts`, `SUPABASE_SECRET_KEY`, server-only, in Vercel env vars, never in the browser or on GitHub) and strips locked parts with `previewContent` before anything is sent. RLS is unchanged: anon still cannot read any table. Logged-in users are redirected to `/app/guides/[slug]`.
 - **Later (parked):** AI-generated explainer videos from uploaded slides. Not part of the app for now.
 
 ### Supabase project settings (already chosen)

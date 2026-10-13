@@ -22,11 +22,15 @@ export type GuidePart = {
   unit: string;
   dur: string;
   yt: string | null;
+  // Object key of the MP4 in the private R2 bucket; played through a short-lived link from /api/video.
+  file: string | null;
   chapters: [number, string][];
   recaps: string[];
   drills: GuideQuestion[];
   mcs: GuideQuestion[];
   works: GuideExercise[];
+  // Set by previewContent: the part is shown as a locked card in the free preview.
+  locked?: boolean;
 };
 
 export type GuideContent = {
@@ -36,6 +40,8 @@ export type GuideContent = {
   examDay: string[];
   notOnSheet: string[];
   credit: string;
+  // Part numbers that are open in the free preview without an account.
+  preview: number[];
   parts: GuidePart[];
 };
 
@@ -93,6 +99,10 @@ function part(v: unknown): GuidePart | null {
     dur: str(p.dur, 20),
     // Only a plain YouTube video id ever reaches the embed URL.
     yt: typeof p.yt === "string" && /^[A-Za-z0-9_-]{11}$/.test(p.yt) ? p.yt : null,
+    file:
+      typeof p.file === "string" && /^[A-Za-z0-9][A-Za-z0-9/_.-]{0,200}\.mp4$/.test(p.file) && !p.file.includes("..")
+        ? p.file
+        : null,
     chapters: list(p.chapters, (c) =>
       Array.isArray(c) && num(c[0]) !== null ? ([num(c[0]) as number, str(c[1], 200)] as [number, string]) : null,
     ),
@@ -117,6 +127,7 @@ export function parseGuideContent(raw: unknown): GuideContent {
     examDay: strs(c.examDay, 20),
     notOnSheet: strs(c.notOnSheet, 60),
     credit: str(c.credit, 300),
+    preview: Array.isArray(c.preview) ? c.preview.filter((n): n is number => num(n) !== null).slice(0, 20) : [],
     parts: Array.isArray(c.parts) ? c.parts.slice(0, 200).map(part).filter((p): p is GuidePart => p !== null) : [],
   };
 }
@@ -126,3 +137,20 @@ export const questionKeys = (p: GuidePart) => [
   ...p.drills.map((q, i) => ({ q, key: `${p.n}-v${i}` })),
   ...p.mcs.map((q, i) => ({ q, key: `${p.n}-p${i}` })),
 ];
+
+// The free preview: only the preview parts keep their content (first part if none is set); every other part
+// keeps just its title, unit and length and is marked locked. Runs on the server, so locked content never
+// reaches the browser.
+export function previewContent(c: GuideContent): GuideContent {
+  const open = new Set(c.preview.length ? c.preview : c.parts.slice(0, 1).map((p) => p.n));
+  return {
+    ...c,
+    examDay: [],
+    notOnSheet: [],
+    parts: c.parts.map((p) =>
+      open.has(p.n)
+        ? p
+        : { ...p, yt: null, file: null, chapters: [], recaps: [], drills: [], mcs: [], works: [], locked: true },
+    ),
+  };
+}

@@ -30,6 +30,7 @@ async function GuideDetail({ slug }: { slug: string }) {
 
   return (
     <GuideView
+      slug={slug}
       guideId={guide.id as string}
       title={guide.title as string}
       summary={guide.summary as string}

@@ -20,6 +20,10 @@ Built with Next.js 16 (App Router), Tailwind CSS 4 and Supabase (Auth + Postgres
 
 6. Open http://localhost:3000.
 
+## Server-only secret
+
+The free preview reads guides on the server with `SUPABASE_SECRET_KEY` (Supabase → Project Settings → API Keys → Secret keys). Set it in Vercel's environment variables and in your local env file. It is never sent to the browser and must never be committed.
+
 ## Pages
 
 | Route     | What it is                                      |
@@ -28,6 +32,7 @@ Built with Next.js 16 (App Router), Tailwind CSS 4 and Supabase (Auth + Postgres
 | `/signup` | Sign up with email + password, then go to `/app` |
 | `/login`  | Log in with email + password, then go to `/app`  |
 | `/app`    | Exam guides and your study list (logged-in users only) |
+| `/guides/[slug]` | Free preview of a guide without an account (only the preview part; nothing is saved) |
 | `/app/guides/[slug]` | One exam guide with videos, quizzes and saved progress |
 
 ## Project layout
