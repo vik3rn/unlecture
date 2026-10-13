@@ -30,6 +30,7 @@ export type GuidePart = {
 };
 
 export type GuideContent = {
+  brand: string;
   exam: string | null;
   facts: string[];
   examDay: string[];
@@ -110,6 +111,7 @@ export function parseGuideContent(raw: unknown): GuideContent {
   const c = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const exam = typeof c.exam === "string" && !Number.isNaN(Date.parse(c.exam)) ? c.exam : null;
   return {
+    brand: str(c.brand, 80),
     exam,
     facts: strs(c.facts, 12),
     examDay: strs(c.examDay, 20),

@@ -92,36 +92,6 @@ body {
     @apply inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 font-medium text-muted transition-colors hover:bg-accent-soft hover:text-ink;
   }
 
-  /* HTML inside exam guide text (formulas, small tables). */
-  .guide-html .m {
-    font-family: "STIX Two Text", "Cambria Math", "Times New Roman", serif;
-    font-style: italic;
-  }
-  .guide-html table.t {
-    margin: 0.5rem 0;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-  }
-  .guide-html table.t td,
-  .guide-html table.t th {
-    border: 1px solid var(--line);
-    padding: 0.25rem 0.6rem;
-    text-align: right;
-  }
-  .guide-html table.t th {
-    background: var(--accent-soft);
-  }
-  .guide-html b {
-    font-weight: 650;
-  }
-  .guide-html .mc {
-    display: none;
-  }
-  .guide-ctx {
-    font-family: ui-monospace, Menlo, Consolas, monospace;
-    white-space: pre-wrap;
-  }
-
   .skip-link {
     @apply sr-only;
   }

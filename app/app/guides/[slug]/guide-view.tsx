@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { LETTERS, questionKeys, type GuideContent, type GuidePart, type GuideQuestion } from "@/lib/guides";
 import { saveGuideProgress, type GuideProgress } from "../actions";
@@ -16,9 +17,19 @@ const mmss = (s: number) => {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 };
 
-function Html({ html, className = "", block = false }: { html: string; className?: string; block?: boolean }) {
+// Text for places that cannot hold HTML (the jump menu).
+const plain = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, "")
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+
+function Html({ html, className, block = false }: { html: string; className?: string; block?: boolean }) {
   const Tag = block ? "div" : "span";
-  return <Tag className={`guide-html ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+  return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 // Minute clock for the countdown; null on the server so the first render matches.
@@ -31,15 +42,15 @@ const noMinute = () => null;
 
 function Countdown({ exam }: { exam: string }) {
   const minute = useSyncExternalStore(subscribeMinute, minuteNow, noMinute);
-  if (minute === null) return null;
+  if (minute === null) return <div className="cd" />;
   const ms = Date.parse(exam) - minute * 60_000;
-  if (ms <= 0) return <p className="text-sm font-semibold text-warn">Exam day: good luck!</p>;
+  if (ms <= 0) return <div className="cd">Exam day: good luck!</div>;
   const d = Math.floor(ms / 86_400_000);
   const h = Math.floor((ms % 86_400_000) / 3_600_000);
   return (
-    <p className="text-sm font-semibold text-warn">
+    <div className="cd">
       Exam in {d} d {h} h
-    </p>
+    </div>
   );
 }
 
@@ -98,7 +109,7 @@ export function GuideView({
     return () => document.removeEventListener("visibilitychange", onHide);
   }, [save]);
 
-  // Highlight the part in the middle of the screen.
+  // Highlight the part that holds the middle of the screen.
   const [current, setCurrent] = useState<string | null>(null);
   useEffect(() => {
     const sections = document.querySelectorAll<HTMLElement>("section[data-part]");
@@ -141,186 +152,163 @@ export function GuideView({
     return out;
   }, [content.parts]);
 
-  const pct = content.parts.length ? Math.round((100 * stats.done) / content.parts.length) : 0;
-  const statLine = `${stats.done}/${content.parts.length} parts · ${stats.answered}/${stats.total} questions · ${stats.marks}/${stats.answered * 2} marks`;
-  const saveText = { idle: "", saving: "Saving…", saved: "Progress saved", error: "Could not save. Check your connection." }[saveState];
+  const pct = content.parts.length ? (100 * stats.done) / content.parts.length : 0;
+  const saveText = { idle: "", saving: "Saving…", saved: "Progress saved", error: "Not saved. Check your connection." }[saveState];
+  const brand = plain(content.brand) || plain(title).split(":")[0];
 
   const resetAll = () => {
     if (window.confirm("Reset all quiz answers and done marks in this guide?")) update(() => EMPTY);
   };
 
   return (
-    <div className="mt-4 grid gap-8 lg:grid-cols-[250px_minmax(0,1fr)]">
-      {/* Sidebar (large screens) */}
-      <aside className="hidden lg:block">
-        <div className="sticky top-4 max-h-[calc(100vh-2rem)] space-y-4 overflow-auto pr-1">
-          <div className="card space-y-2 p-4">
-            {content.exam && <Countdown exam={content.exam} />}
-            <div
-              className="h-2 overflow-hidden rounded-full bg-accent-soft"
-              role="progressbar"
-              aria-label="Parts marked done"
-              aria-valuenow={pct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div className="h-full rounded-full bg-ok" style={{ width: `${pct}%` }} />
-            </div>
-            <p className="text-sm text-muted">{statLine}</p>
-            <p className="min-h-5 text-xs text-muted" aria-live="polite">
-              {saveText}
-            </p>
-          </div>
-          <nav aria-label="Parts of this guide">
-            {units.map((u) => (
-              <div key={u.unit}>
-                <p className="mt-4 mb-1 px-2 text-xs font-semibold tracking-wider text-muted uppercase">{u.unit}</p>
-                <ul>
-                  {u.parts.map((p) => {
-                    const id = `part-${p.n}`;
-                    return (
-                      <li key={p.n}>
-                        <a
-                          href={`#${id}`}
-                          aria-current={current === id ? "location" : undefined}
-                          className={`flex items-baseline gap-2 rounded-lg px-2 py-1.5 text-sm ${
-                            current === id ? "bg-accent-soft font-semibold text-ink" : "text-muted hover:bg-accent-soft/60"
-                          }`}
-                        >
-                          <span className="w-5 shrink-0 text-right tabular-nums">{p.n}</span>
-                          <Html html={p.title} />
-                          {progress.done[p.n] && (
-                            <span className="ml-auto font-bold text-ok" aria-label="done">
-                              ✓
-                            </span>
-                          )}
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
-          </nav>
+    <div className="dg">
+      <header className="top">
+        <Link href="/app" className="back" aria-label="All guides">
+          ← Guides
+        </Link>
+        <div className="brand">{brand}</div>
+        {content.exam && <Countdown exam={content.exam} />}
+        <div
+          className="bar"
+          role="progressbar"
+          aria-label="Parts marked done"
+          aria-valuenow={Math.round(pct)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <i style={{ width: `${pct}%` }} />
         </div>
-      </aside>
-
-      <div className="min-w-0">
-        {/* Compact bar (small screens) */}
-        <div className="sticky top-0 z-10 -mx-4 mb-4 flex items-center gap-3 border-b border-line bg-bg/90 px-4 py-2 backdrop-blur lg:hidden">
-          <label htmlFor="jump" className="sr-only">
-            Jump to part
-          </label>
-          <select
-            id="jump"
-            className="field min-h-10 flex-1 py-1.5 text-sm"
-            value={current ?? ""}
-            onChange={(e) => {
-              if (e.target.value) document.getElementById(e.target.value)?.scrollIntoView({ behavior: "smooth" });
-            }}
-          >
-            <option value="">Jump to part…</option>
-            {units.map((u) => (
-              <optgroup key={u.unit} label={u.unit}>
-                {u.parts.map((p) => (
-                  <option key={p.n} value={`part-${p.n}`}>
-                    {progress.done[p.n] ? "✓ " : ""}Part {p.n}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          <span className="shrink-0 text-sm text-muted">
-            {stats.done}/{content.parts.length} done
-          </span>
+        <div className="stat">
+          {stats.done}/{content.parts.length} parts · {stats.answered}/{stats.total} questions · {stats.marks}/
+          {stats.answered * 2} marks
         </div>
-
-        <header className="card p-6 sm:p-8">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
-          {summary && <p className="mt-2 text-muted">{summary}</p>}
-          <p className="mt-2 text-muted">
-            {content.parts.length} videos, {stats.total} exam-style questions and {stats.exercises} paper exercises.
-            Work from top to bottom. Your progress is saved to your account.
-          </p>
-          <ol className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              ["Watch", "Pause at every stop sign and solve on paper."],
-              ["Remember", "Read the key points under the video."],
-              ["Quiz", "Pick TWO of six, then check. Every option is explained."],
-              ["Paper", "Solve the exercises by hand, then open the answer."],
-            ].map(([h, t], i) => (
-              <li key={h} className="rounded-xl bg-bg p-3 text-sm text-muted">
-                <span className="block font-semibold text-ink">
-                  {i + 1} · {h}
-                </span>
-                {t}
-              </li>
-            ))}
-          </ol>
-          {content.facts.length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-2" aria-label="Exam facts">
-              {content.facts.map((f, i) => (
-                <li
-                  key={f}
-                  className={`rounded-full px-3 py-1 text-sm ${i === 0 ? "bg-warn-soft font-semibold text-warn" : "bg-accent-soft text-muted"}`}
-                >
-                  <Html html={f} />
-                </li>
+        <label htmlFor="jump" className="sr-only">
+          Jump to part
+        </label>
+        <select
+          id="jump"
+          value={current ?? ""}
+          onChange={(e) => {
+            if (e.target.value) document.getElementById(e.target.value)?.scrollIntoView({ behavior: "smooth" });
+          }}
+        >
+          <option value="">Jump to part…</option>
+          {units.map((u) => (
+            <optgroup key={u.unit} label={u.unit}>
+              {u.parts.map((p) => (
+                <option key={p.n} value={`part-${p.n}`}>
+                  {progress.done[p.n] ? "✓ " : ""}Part {p.n} · {plain(p.title)}
+                </option>
               ))}
-            </ul>
-          )}
-        </header>
-
-        {units.map((u) => (
-          <div key={u.unit}>
-            <h2 className="mt-10 mb-3 flex items-center gap-3 text-xs font-bold tracking-[.12em] text-muted uppercase after:h-px after:flex-1 after:bg-line">
-              {u.unit}
-            </h2>
-            {u.parts.map((p) => (
-              <PartSection key={p.n} part={p} progress={progress} update={update} />
-            ))}
-          </div>
-        ))}
-
-        {content.notOnSheet.length > 0 && (
-          <section className="card mt-8 border-2 border-danger p-6" aria-labelledby="not-on-sheet">
-            <h2 id="not-on-sheet" className="text-xl font-semibold text-danger">
-              Not on the formula sheet: learn it
-            </h2>
-            <ol className="mt-3 list-decimal space-y-1.5 pl-6 sm:columns-2 sm:gap-8">
-              {content.notOnSheet.map((x) => (
-                <li key={x} className="break-inside-avoid">
-                  <Html html={x} className="font-serif" />
-                </li>
-              ))}
-            </ol>
-          </section>
-        )}
-
-        {content.examDay.length > 0 && (
-          <section className="card mt-6 p-6" aria-labelledby="exam-day">
-            <h2 id="exam-day" className="text-xl font-semibold">
-              Exam day
-            </h2>
-            <ul className="mt-3 list-disc space-y-1.5 pl-6">
-              {content.examDay.map((x) => (
-                <li key={x}>
-                  <Html html={x} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
-          {content.credit ? <Html html={content.credit} /> : <span />}
-          <button type="button" className="btn-secondary text-sm" onClick={resetAll}>
-            Reset my progress
-          </button>
-        </div>
-        <p className="mt-2 text-sm text-muted lg:hidden" aria-live="polite">
+            </optgroup>
+          ))}
+        </select>
+        <div className={`save${saveState === "error" ? " err" : ""}`} aria-live="polite">
           {saveText}
-        </p>
+        </div>
+      </header>
+
+      <div className="wrap">
+        <nav className="side" aria-label="Parts of this guide">
+          {units.map((u) => (
+            <div key={u.unit}>
+              <div className="nh">{u.unit}</div>
+              {u.parts.map((p) => {
+                const id = `part-${p.n}`;
+                return (
+                  <a
+                    key={p.n}
+                    href={`#${id}`}
+                    aria-current={current === id ? "location" : undefined}
+                    className={`${current === id ? "cur" : ""} ${progress.done[p.n] ? "done" : ""}`}
+                  >
+                    <span className="n">{p.n}</span>
+                    <Html html={p.title} />
+                    <span className="ck" aria-label={progress.done[p.n] ? "done" : undefined}>
+                      ✓
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        <div className="content">
+          <div className="hero">
+            <h1>{title}</h1>
+            {summary && <p>{summary}</p>}
+            <p>
+              {content.parts.length} videos, {stats.total} exam-style questions and {stats.exercises} paper exercises in
+              one place. Work from top to bottom. Your progress is saved to your account.
+            </p>
+            <ol className="steps">
+              <li className="step">
+                <b>1 · Watch</b>Pause at every stop sign and solve on paper.
+              </li>
+              <li className="step">
+                <b>2 · Remember</b>Read the key points under the video.
+              </li>
+              <li className="step">
+                <b>3 · Quiz</b>Pick TWO of six, then check. Explanations for every option.
+              </li>
+              <li className="step">
+                <b>4 · Paper</b>Solve the exercises by hand, then open the answer.
+              </li>
+            </ol>
+            {content.facts.length > 0 && (
+              <ul className="facts" aria-label="Exam facts">
+                {content.facts.map((f, i) => (
+                  <li key={f}>
+                    <Html html={f} className={`chip${i === 0 ? " hot" : ""}`} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {units.map((u) => (
+            <div key={u.unit}>
+              <h2 className="unit">{u.unit}</h2>
+              {u.parts.map((p) => (
+                <PartSection key={p.n} part={p} progress={progress} update={update} />
+              ))}
+            </div>
+          ))}
+
+          {content.notOnSheet.length > 0 && (
+            <section className="final" aria-labelledby="not-on-sheet">
+              <h2 id="not-on-sheet">Not on the formula sheet: learn it</h2>
+              <ol>
+                {content.notOnSheet.map((x) => (
+                  <li key={x}>
+                    <Html html={x} />
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          {content.examDay.length > 0 && (
+            <section className="checklist" aria-labelledby="exam-day">
+              <h2 id="exam-day">Exam day</h2>
+              <ul>
+                {content.examDay.map((x) => (
+                  <li key={x}>
+                    <Html html={x} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <div className="foot">
+            {content.credit ? <Html html={content.credit} /> : <span />}
+            <button type="button" className="iconbtn" onClick={resetAll}>
+              Reset my progress
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -399,33 +387,24 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
   });
 
   return (
-    <section id={id} data-part={part.n} className="card mb-6 scroll-mt-16 p-5 sm:p-7" aria-labelledby={`${id}-title`}>
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-        <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-bold tracking-wider text-ink uppercase">
-          Part {part.n}
-        </span>
-        <h3 id={`${id}-title`} className="min-w-60 flex-1 text-xl font-semibold sm:text-2xl">
+    <section id={id} data-part={part.n} className="part" aria-labelledby={`${id}-title`}>
+      <div className="ph">
+        <span className="pn">Part {part.n}</span>
+        <h3 id={`${id}-title`}>
           <Html html={part.title} />
         </h3>
-        <span className="text-sm text-muted tabular-nums">{part.dur}</span>
-        <label className="ml-auto inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            className="size-5 accent-[var(--ok)]"
-            checked={done}
-            onChange={(e) => setDone(e.target.checked)}
-          />
-          Done
+        <span className="dur">{part.dur}</span>
+        <label className="done-toggle">
+          <input type="checkbox" checked={done} onChange={(e) => setDone(e.target.checked)} /> Done
         </label>
       </div>
 
-      <div ref={box} className="mt-4 aspect-video overflow-hidden rounded-xl bg-black">
+      <div ref={box} className="vid">
         {src ? (
           <iframe
             ref={frame}
             src={src}
             title={`Part ${part.n} video`}
-            className="size-full border-0"
             allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
             allowFullScreen
             onLoad={() =>
@@ -436,28 +415,24 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
             }
           />
         ) : part.yt ? (
-          <button
-            type="button"
-            onClick={() => seek(0)}
-            className="group grid size-full cursor-pointer place-items-center bg-gradient-to-br from-[#1b1d33] to-[#0b0c16] text-center text-white"
-          >
+          <button type="button" className="play" onClick={() => seek(0)}>
             <span>
-              <span className="mx-auto grid size-16 place-items-center rounded-full bg-white/15 text-2xl transition-colors group-hover:bg-white/25 sm:size-20">
+              <span className="circle" aria-hidden="true">
                 ▶
               </span>
-              <span className="mt-3 block font-semibold">
+              <span className="t1">
                 Play Part {part.n} · {part.dur}
               </span>
-              <span className="mt-1 block text-sm text-white/70">Plays here on the page</span>
+              <span className="t2">Plays here on the page</span>
             </span>
           </button>
         ) : (
-          <div className="grid size-full place-items-center p-6 text-center text-white/80">Video coming soon</div>
+          <div className="soon">Video coming soon</div>
         )}
       </div>
 
       {part.chapters.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Chapters">
+        <div className="chaps" aria-label="Chapters">
           {part.chapters.map(([t, name], i) => (
             <button
               key={`${t}-${i}`}
@@ -465,13 +440,9 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
               disabled={!part.yt}
               onClick={() => seek(t)}
               aria-current={chapter === i ? "true" : undefined}
-              className={`min-h-9 rounded-full border px-3 py-1 text-sm transition-colors disabled:cursor-default disabled:opacity-60 ${
-                chapter === i
-                  ? "border-accent bg-accent text-accent-ink"
-                  : "border-line bg-bg text-muted hover:border-accent hover:text-ink"
-              }`}
+              className={chapter === i ? "cur" : undefined}
             >
-              <span className="mr-1.5 tabular-nums opacity-75">{mmss(t)}</span>
+              <span className="ts">{mmss(t)}</span>
               <Html html={name} />
             </button>
           ))}
@@ -480,15 +451,10 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
 
       {part.recaps.length > 0 && (
         <>
-          <h4 className="mt-7 mb-2 text-xs font-bold tracking-widest text-muted uppercase">Remember this</h4>
-          <div className="rounded-xl bg-warn-soft px-5 py-1">
+          <h4 className="sub">Remember this</h4>
+          <div className="remember">
             {part.recaps.map((r) => (
-              <p key={r} className="my-3 font-medium">
-                <span className="font-bold text-warn" aria-hidden="true">
-                  →{" "}
-                </span>
-                <Html html={r} />
-              </p>
+              <Html key={r} html={r} block className="rp" />
             ))}
           </div>
         </>
@@ -496,8 +462,8 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
 
       {qs.length > 0 && (
         <>
-          <h4 className="mt-7 mb-2 text-xs font-bold tracking-widest text-muted uppercase">
-            Quiz <span className="font-medium tracking-normal normal-case">· {qs.length} questions · pick TWO</span>
+          <h4 className="sub">
+            Quiz <span className="cnt">· {qs.length} questions · pick TWO</span>
           </h4>
           {qs.map(({ q, key, label }) => (
             <Quiz
@@ -521,12 +487,12 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
 
       {part.works.length > 0 && (
         <>
-          <h4 className="mt-7 mb-2 text-xs font-bold tracking-widest text-muted uppercase">
-            On paper <span className="font-medium tracking-normal normal-case">· {part.works.length} exercises</span>
+          <h4 className="sub">
+            On paper <span className="cnt">· {part.works.length} exercises</span>
           </h4>
           {part.works.map((w, i) => (
-            <div key={i} className="my-3 rounded-xl border border-line bg-bg p-4">
-              <p className="text-xs font-bold tracking-wider text-muted uppercase">
+            <div key={i} className="ex">
+              <span className="tag">
                 Exercise {i + 1}
                 {w.tag && (
                   <>
@@ -534,14 +500,11 @@ function PartSection({ part, progress, update }: { part: GuidePart; progress: Gu
                     <Html html={w.tag} />
                   </>
                 )}
-              </p>
-              <Html html={w.q} block className="mt-1" />
-              <details className="group mt-3">
-                <summary className="cursor-pointer text-sm font-semibold text-accent">
-                  <span className="group-open:hidden">Show answer</span>
-                  <span className="hidden group-open:inline">Hide answer</span>
-                </summary>
-                <Html html={w.a} block className="mt-2 rounded-lg bg-ok-soft px-4 py-3" />
+              </span>
+              <Html html={w.q} block className="qt" />
+              <details>
+                <summary />
+                <Html html={w.a} block className="ans" />
               </details>
             </div>
           ))}
@@ -577,33 +540,21 @@ function Quiz({
   };
 
   return (
-    <div className="my-3 rounded-2xl border border-line bg-bg p-4 sm:p-5">
-      <p className="mb-2 flex items-center gap-2 text-xs font-bold tracking-wider text-muted uppercase">
-        <span className={`rounded-md px-2 py-0.5 ${q.src === "video" ? "bg-accent-soft" : "bg-warn-soft text-warn"}`}>
-          {q.src === "video" ? "Video drill" : "New"}
-        </span>
+    <div className={`q${checked ? " checked" : ""}`}>
+      <div className="qh">
+        <span className={`src ${q.src}`}>{q.src === "video" ? "Video drill" : "New"}</span>
         {label}
-      </p>
-      {q.ctx && (
-        <Html
-          html={q.ctx}
-          block
-          className={`guide-ctx my-2 rounded-lg border border-dashed border-line bg-surface px-3 py-2 text-sm text-muted`}
-        />
-      )}
-      <Html html={q.stem.replace(/^Q\d+\.\s*/, "")} block className="mb-3 font-semibold" />
-      <div className="grid gap-2 sm:grid-cols-2">
+      </div>
+      {q.ctx && <Html html={q.ctx} block className="ctx" />}
+      <Html html={q.stem.replace(/^Q\d+\.\s*/, "")} block className="stem" />
+      <div className="opts">
         {q.opts.map((o, i) => {
           const letter = LETTERS[i];
           const picked = shown.includes(letter);
           const ok = q.correct.includes(letter);
-          let tone = "border-line bg-surface hover:border-accent";
-          if (!checked && picked) tone = "border-accent bg-accent-soft";
-          if (checked) {
-            if (ok) tone = "border-ok bg-ok-soft";
-            else if (picked) tone = "border-danger bg-danger-soft";
-            else tone = "border-line bg-surface opacity-70";
-          }
+          const cls = ["opt", picked && "sel", checked && ok && "right", checked && picked && !ok && "wrongpick", checked && ok && !picked && "missed"]
+            .filter(Boolean)
+            .join(" ");
           return (
             <button
               key={letter}
@@ -611,49 +562,26 @@ function Quiz({
               aria-pressed={picked}
               aria-disabled={checked}
               onClick={() => toggle(letter)}
-              className={`relative flex items-start gap-3 rounded-xl border-2 p-3 text-left leading-snug ${tone} ${
-                checked ? "cursor-default" : "cursor-pointer"
-              }`}
+              className={cls}
             >
-              <span
-                className={`grid size-7 shrink-0 place-items-center rounded-md text-sm font-bold ${
-                  checked && ok
-                    ? "bg-ok text-surface"
-                    : checked && picked
-                      ? "bg-danger text-surface"
-                      : picked
-                        ? "bg-accent text-accent-ink"
-                        : "bg-ink text-surface"
-                }`}
-              >
-                {letter}
-              </span>
+              <span className="l">{letter}</span>
               <span>
                 <Html html={o} />
-                {checked && q.notes[i] && (
-                  <span className={`mt-1 block text-sm font-semibold ${ok ? "text-ok" : "text-danger"}`}>
-                    <Html html={q.notes[i]} />
-                  </span>
-                )}
+                {checked && q.notes[i] && <Html html={q.notes[i]} className="nt" />}
               </span>
-              {checked && ok && !picked && (
-                <span className="absolute -top-2.5 right-3 rounded bg-ok px-1.5 py-0.5 text-[11px] font-bold text-surface uppercase">
-                  missed
-                </span>
-              )}
             </button>
           );
         })}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
+      <div className="qa">
         {checked ? (
-          <button type="button" className="btn-secondary min-h-10 text-sm" onClick={onReset}>
+          <button type="button" className="btn ghost" onClick={onReset}>
             Try again
           </button>
         ) : (
           <button
             type="button"
-            className="btn-primary min-h-10 text-sm"
+            className="btn"
             disabled={sel.length !== 2}
             onClick={() => {
               onCheck([...sel].sort());
@@ -663,21 +591,16 @@ function Quiz({
             Check
           </button>
         )}
-        <span
-          role="status"
-          className={`text-sm font-semibold ${right === 2 ? "text-ok" : right === 1 ? "text-warn" : "text-danger"}`}
-        >
+        <span role="status" className={`score s${right}`}>
           {checked && (right === 2 ? "2 / 2 correct" : `${right} / 2 · correct: ${q.correct.join(" and ")}`)}
         </span>
         {onWatch && (
-          <button type="button" className="text-sm font-semibold text-accent hover:underline" onClick={onWatch}>
+          <button type="button" className="watch" onClick={onWatch}>
             ▶ Explained at {mmss(q.at ?? 0)} in the video
           </button>
         )}
       </div>
-      {checked && q.expl && (
-        <Html html={q.expl} block className="mt-3 rounded-xl border-l-4 border-ok bg-surface px-4 py-3 text-muted" />
-      )}
+      {checked && q.expl && <Html html={q.expl} block className="expl" />}
     </div>
   );
 }
