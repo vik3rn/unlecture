@@ -2,48 +2,42 @@ import Link from "next/link";
 
 const steps = [
   {
-    title: "Tell it what's confusing",
-    body: "Type the topic, paste your notes, or upload the lecture slides you don't get.",
+    title: "Watch one short part at a time",
+    body: "Each guide splits a course into short videos that play right on the page, with chapters you can jump between.",
   },
   {
-    title: "Watch a clear explainer",
-    body: "A narrated video builds the idea step by step with diagrams, charts and formulas, in your language.",
+    title: "Check yourself with exam-style quizzes",
+    body: "Questions built like the real exam. Every option comes with an explanation and a link to the moment in the video.",
   },
   {
-    title: "Check that it clicked",
-    body: "The video pauses for quick quiz questions, then gives you flashcards to review before the exam.",
+    title: "Practise on paper, then see the answer",
+    body: "Worked exercises to solve by hand. Your answers and progress are saved to your account, on any device.",
   },
 ];
 
-function ScenePreview() {
+function GuidePreview() {
   return (
     <div
       className="card relative overflow-hidden p-5 shadow-[0_20px_60px_-30px_rgba(67,56,202,0.45)] sm:p-6"
       role="img"
-      aria-label="Example: an explainer video scene about OLS regression with a fitted line through data points and narration subtitles."
+      aria-label="Example: one part of an exam guide, with a video, a progress bar and a quiz question where two of six answers are correct."
     >
       <div className="flex items-center justify-between text-xs font-medium text-muted">
-        <span>Scene 3 of 9 · OLS regression</span>
-        <span>2:14 / 4:30</span>
+        <span>Part 7 · OLS regression</span>
+        <span>6 of 15 parts done</span>
       </div>
-      <svg viewBox="0 0 320 170" className="mt-4 w-full" aria-hidden="true">
-        <line x1="20" y1="150" x2="310" y2="150" stroke="var(--line)" strokeWidth="2" />
-        <line x1="20" y1="150" x2="20" y2="10" stroke="var(--line)" strokeWidth="2" />
-        {[
-          [45, 128], [70, 120], [92, 104], [118, 110], [140, 88], [165, 92],
-          [188, 70], [210, 74], [236, 52], [260, 58], [284, 36],
-        ].map(([cx, cy]) => (
-          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="5" fill="var(--muted)" opacity="0.55" />
-        ))}
-        <line x1="30" y1="138" x2="300" y2="30" stroke="var(--accent)" strokeWidth="4" strokeLinecap="round" />
-        <line x1="140" y1="88" x2="140" y2="94" stroke="var(--accent)" strokeWidth="2" strokeDasharray="3 3" />
-      </svg>
-      <p className="mt-4 rounded-lg bg-accent-soft px-3 py-2 text-sm">
-        &ldquo;OLS picks the line that makes the squared distances to every point as small as
-        possible.&rdquo;
-      </p>
-      <div className="mt-4 h-1.5 rounded-full bg-line">
-        <div className="h-full w-1/2 rounded-full bg-accent" />
+      <div className="mt-3 h-1.5 rounded-full bg-line">
+        <div className="h-full w-2/5 rounded-full bg-ok" />
+      </div>
+      <div className="mt-4 grid aspect-video place-items-center rounded-xl bg-gradient-to-br from-[#1b1d33] to-[#0b0c16] text-white">
+        <span className="grid size-14 place-items-center rounded-full bg-white/15 text-xl">▶</span>
+      </div>
+      <p className="mt-4 text-sm font-semibold">Which TWO statements about OLS are correct?</p>
+      <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+        <span className="rounded-lg border-2 border-ok bg-ok-soft px-2.5 py-2">The residuals sum to zero</span>
+        <span className="rounded-lg border-2 border-line bg-surface px-2.5 py-2 text-muted">R² can be negative</span>
+        <span className="rounded-lg border-2 border-line bg-surface px-2.5 py-2 text-muted">It maximises SSR</span>
+        <span className="rounded-lg border-2 border-ok bg-ok-soft px-2.5 py-2">The line passes through (x̄, ȳ)</span>
       </div>
     </div>
   );
@@ -58,20 +52,20 @@ export default function Home() {
             For IE University students with an exam coming up
           </p>
           <h1 className="mt-5 text-4xl leading-tight font-bold tracking-tight sm:text-5xl">
-            Lecture slides didn&rsquo;t click? Watch them explained.
+            Exam coming up? Get through the course step by step.
           </h1>
           <p className="mt-5 text-lg text-muted">
-            Unlecture turns confusing lecture slides into clear, narrated explainer videos, so
-            you finally get it before the exam.
+            Unlecture exam guides take you through a whole course in one place: short videos, the key points,
+            exam-style quizzes and paper exercises, so you know what to expect on exam day.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link href="/signup" className="btn-primary px-7 text-lg">
               Sign up free
             </Link>
-            <p className="text-sm text-muted">No credit card. Your study packs stay private.</p>
+            <p className="text-sm text-muted">No credit card. Your progress stays private.</p>
           </div>
         </div>
-        <ScenePreview />
+        <GuidePreview />
       </section>
 
       <section className="border-t border-line bg-surface" aria-labelledby="how-heading">

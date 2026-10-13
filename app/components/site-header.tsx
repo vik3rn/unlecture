@@ -17,7 +17,7 @@ async function AuthNav() {
   return (
     <div className="flex items-center gap-2">
       <Link href="/app" className="btn-ghost">
-        My packs
+        My guides
       </Link>
       <form action={logout}>
         <button type="submit" data-testid="logout" className="btn-secondary">

@@ -10,11 +10,11 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   title: {
-    default: "Unlecture – lecture slides turned into explainer videos",
+    default: "Unlecture – exam guides for IE students",
     template: "%s · Unlecture",
   },
   description:
-    "Unlecture helps IE students before exams turn confusing lecture slides into clear explainer videos so they finally get it.",
+    "Unlecture exam guides take IE students through a course step by step before the exam: short videos, key points, exam-style quizzes and paper exercises.",
 };
 
 export const viewport: Viewport = {

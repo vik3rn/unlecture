@@ -28,29 +28,21 @@ An automated bot grades this app on its public Vercel URL, acting like a strange
 
 ## Product: Unlecture
 
-**One-liner:** Unlecture helps IE students before exams turn confusing lecture slides into clear explainer videos so they finally get it.
+**One-liner:** Unlecture exam guides take IE students through a course step by step before the exam, so they know what to expect on exam day.
 
-- **Who:** IE University students with an exam in the next two weeks who don't understand their lecture slides.
-- **Data:** private. Each user sees only their own study packs.
-- **Main feature (core):** on `/app` the user types what they want to understand (for example "OLS regression") in `core-input` and clicks `core-submit`. A study pack is saved at once and shown as a `core-item`. Saving never calls an AI API.
-- **Video generation** starts only when the user clicks "Make video" inside a study pack. Inputs: uploaded PDF, slides or images (Supabase Storage, private bucket with RLS), pasted text, or just the topic.
-- **Flow:** two modes. "Quick" goes straight to the video. "Let me steer" shows the outline or script first, the user can edit or approve it, then the scenes are made. The user picks the length: short 3–5 min, medium 8–12, deep 15–25.
-- **Video = live in the browser, not MP4.** The AI returns a scene plan as JSON, using a fixed set of scene types (title, bullet build, diagram/SVG, chart, timeline, compare, formula, figure from the upload, quiz stop). A player plays the scenes on one clock, in sync with the narration.
-- **Interactive:** clickable quiz stops (the video pauses and the user answers to get an explanation), flashcards made after each video and stored in Supabase with spaced repetition, "ask about this scene" (one short AI answer), and "redo this scene" (only that scene is regenerated).
-- **Languages:** the UI is in English. The video can be in any language the user chooses.
-- **Voice:** start with the browser's `speechSynthesis`. Later, Azure or Google neural TTS through a server route (free tier).
+- **Who:** IE University students with an exam in the next two weeks.
+- **Exam guides:** curated by the project owner and stored in the `guides` table (read-only for users; content is loaded with a seed SQL file that is NOT in this repo). One guide = parts with an embedded YouTube video (unlisted, `youtube-nocookie`, loaded only when the student presses play), chapters, key points, exam-style quizzes (pick two of six) and paper exercises.
+- **Progress:** quiz answers and "done" marks are saved per user in `guide_progress` (RLS: own rows only) through a server action that validates the shape.
+- **Main feature (core):** on `/app` the user types a course or topic they need a guide for in `core-input` and clicks `core-submit`. It is saved at once to their study list (`study_packs` table) and shown as a `core-item`. Saving never calls an AI API.
+- **Data:** private. Each user sees only their own study list and progress. Guides are visible to every logged-in user.
+- **Guide HTML:** guide text may hold a little HTML (formulas, tables). `lib/guides.ts` escapes every tag outside a short allowlist and every attribute except `class`; only a plain 11-character YouTube id reaches the embed URL.
+- **Later (parked):** AI-generated explainer videos from uploaded slides. Not part of the app for now.
 
 ### Supabase project settings (already chosen)
 - Region Europe. "Enable Data API" ON. "Automatically expose new tables" OFF. "Enable automatic RLS" ON.
 - Because new tables are not exposed automatically, every table's SQL must include explicit grants for the `authenticated` role (for example `grant select, insert, update, delete on table public.<table> to authenticated;`) as well as RLS policies based on `auth.uid()`. Do not grant anything to `anon`.
 
-### Cost and AI rules
-- Model: Claude Sonnet 5.5 (`claude-sonnet-5-5`) through the official `@anthropic-ai/sdk`, only in server route handlers. The key is `ANTHROPIC_API_KEY` (never `NEXT_PUBLIC_`).
-- Every AI call is triggered by an explicit user click, checked against a per-user quota stored in Supabase (for example 5 videos per day and 30 questions per day) and logged with token usage. The same rules apply to every account, including the grading bot's.
-- Long generations stream or are split into steps (outline → script → scenes), so no single Vercel function call runs into the time limit.
-
 ### Build order
-1. The contract skeleton (landing page, auth, `/app` with study packs, RLS), deployed and tested like the bot.
-2. Upload and "Make video" (outline → scenes) and the player with the browser voice.
-3. Quiz stops, flashcards, "ask about this scene", "redo this scene", languages, neural voice.
-4. Landing page polish after watching real users.
+1. The contract skeleton (landing page, auth, `/app` with the study list, RLS), deployed and tested like the bot.
+2. Exam guides: `guides` + `guide_progress` tables, guide list on `/app`, guide page with embedded videos, quizzes and saved progress.
+3. Landing page polish after watching real users. AI video generation only if it comes back (then: server routes only, per-user quota, explicit click).

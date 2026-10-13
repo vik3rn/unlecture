@@ -13,7 +13,7 @@ export async function createStudyPack(
   formData: FormData,
 ): Promise<CreatePackState> {
   const title = String(formData.get("title") ?? "").trim();
-  if (!title) return { error: "Type what you want to understand first." };
+  if (!title) return { error: "Type a course or topic first." };
   if (title.length > MAX_TITLE_LENGTH) {
     return { error: `Keep it under ${MAX_TITLE_LENGTH} characters.` };
   }
@@ -23,9 +23,9 @@ export async function createStudyPack(
   const userId = data?.claims?.sub;
   if (!userId) redirect("/login");
 
-  // Saving a pack never calls an AI API.
+  // Saving to the study list never calls an AI API.
   const { error } = await supabase.from("study_packs").insert({ title, user_id: userId });
-  if (error) return { error: `Could not save your study pack: ${error.message}` };
+  if (error) return { error: `Could not save it: ${error.message}` };
 
   revalidatePath("/app");
   return { error: null };

@@ -12,6 +12,11 @@
   --accent-ink: #ffffff;
   --accent-soft: #eceafd;
   --danger: #b42318;
+  --danger-soft: #fdecea;
+  --ok: #116a43;
+  --ok-soft: #e3f4ea;
+  --warn: #9a4a00;
+  --warn-soft: #fdf0e1;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,6 +31,11 @@
     --accent-ink: #14152b;
     --accent-soft: #23244a;
     --danger: #fda29b;
+    --danger-soft: #3a1d22;
+    --ok: #6ee7a8;
+    --ok-soft: #13312a;
+    --warn: #fdba74;
+    --warn-soft: #3a2a17;
   }
 }
 
@@ -40,6 +50,11 @@
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -75,6 +90,36 @@ body {
   }
   .btn-ghost {
     @apply inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 font-medium text-muted transition-colors hover:bg-accent-soft hover:text-ink;
+  }
+
+  /* HTML inside exam guide text (formulas, small tables). */
+  .guide-html .m {
+    font-family: "STIX Two Text", "Cambria Math", "Times New Roman", serif;
+    font-style: italic;
+  }
+  .guide-html table.t {
+    margin: 0.5rem 0;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .guide-html table.t td,
+  .guide-html table.t th {
+    border: 1px solid var(--line);
+    padding: 0.25rem 0.6rem;
+    text-align: right;
+  }
+  .guide-html table.t th {
+    background: var(--accent-soft);
+  }
+  .guide-html b {
+    font-weight: 650;
+  }
+  .guide-html .mc {
+    display: none;
+  }
+  .guide-ctx {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    white-space: pre-wrap;
   }
 
   .skip-link {

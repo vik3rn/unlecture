@@ -11,10 +11,10 @@ export function NewPackForm() {
   return (
     <form action={formAction} className="card p-4 sm:p-5">
       <label htmlFor="core-input" className="block font-medium">
-        What do you want to understand?
+        Which course or topic do you need a guide for?
       </label>
       <p id="core-input-hint" className="mt-1 text-sm text-muted">
-        A topic from your lecture, e.g. &ldquo;OLS regression&rdquo; or &ldquo;Porter&rsquo;s five forces&rdquo;.
+        Keep a list of what you still need to study, e.g. &ldquo;Microeconomics midterm&rdquo; or &ldquo;OLS regression&rdquo;.
       </p>
       <div className="mt-3 flex flex-col gap-3 sm:flex-row">
         <input
@@ -25,7 +25,7 @@ export function NewPackForm() {
           required
           maxLength={200}
           autoComplete="off"
-          placeholder="OLS regression"
+          placeholder="Microeconomics midterm"
           aria-describedby={state.error ? "core-input-hint core-input-error" : "core-input-hint"}
           className="field flex-1"
         />
@@ -35,7 +35,7 @@ export function NewPackForm() {
           disabled={pending}
           className="btn-primary sm:w-auto"
         >
-          {pending ? "Saving…" : "Add study pack"}
+          {pending ? "Saving…" : "Add to list"}
         </button>
       </div>
       {state.error && (

@@ -21,7 +21,7 @@ const copy = {
   },
   login: {
     title: "Welcome back",
-    subtitle: "Log in to your study packs.",
+    subtitle: "Log in to your exam guides.",
     submit: "Log in",
     pending: "Logging in…",
     switchText: "New to Unlecture?",
