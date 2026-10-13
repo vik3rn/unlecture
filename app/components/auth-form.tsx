@@ -12,7 +12,7 @@ type Props = {
 const copy = {
   signup: {
     title: "Create your account",
-    subtitle: "Free for students. Takes 10 seconds.",
+    subtitle: "Free for students. Your account saves your progress in every guide.",
     submit: "Sign up",
     pending: "Creating account…",
     switchText: "Already have an account?",
@@ -21,7 +21,7 @@ const copy = {
   },
   login: {
     title: "Welcome back",
-    subtitle: "Log in to your exam guides.",
+    subtitle: "Log in to your exam guides and your saved progress.",
     submit: "Log in",
     pending: "Logging in…",
     switchText: "New to Unlecture?",

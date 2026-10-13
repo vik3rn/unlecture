@@ -1,0 +1,185 @@
+/* Landing page ("/") in the look of the original offline study guide: warm paper, Georgia headings, blue accent,
+   orange accent-2, 22px cards, chips and steps. Same tokens as app/app/guides/[slug]/guide.css (.dg).
+   Everything is scoped to .lp: Next.js keeps a page's stylesheet loaded after client navigation.
+   Inside .lp, --accent-ink means accent-coloured TEXT (as in guide.css), not text on the accent as in globals.css,
+   so do not use Tailwind colour utilities inside .lp.
+   WCAG 2.1 AA, lowest text pairs: light ink-3 on bg-2 4.84, ok on bg-2 4.96, accent-2-ink on accent-2-soft 5.08,
+   ok on ok-soft 5.24, white on the button 5.96; dark ok on ok-soft 5.85, ink-3 on card 5.36, ink-2 on chip 6.00, button text 6.99. */
+.lp {
+  --bg: #f5f3ec; --bg-2: #ebe8de; --card: #fffdf8; --ink: #1c2130; --ink-2: #4b5365; --ink-3: #5d6473; --line: #d9d5c8;
+  --accent: #2c5bd1; --accent-ink: #1f46ad; --accent-soft: #e2e9fb; --on-accent: #ffffff;
+  --accent-2: #e0662f; --accent-2-ink: #a8431a; --accent-2-soft: #fbe8dd;
+  --ok: #17704a; --ok-soft: #def3e8; --on-ok: #ffffff; --track: #ebe8de; --chip: #ebe8de;
+  --shadow: 0 8px 24px rgba(30, 30, 40, 0.07);
+  --shadow-lg: 0 28px 60px -30px rgba(30, 40, 80, 0.35);
+  --cta-shadow: 0 12px 24px -14px rgba(44, 91, 209, 0.7);
+  --serif: Georgia, "Times New Roman", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
+  flex: 1 0 auto;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+}
+@media (prefers-color-scheme: dark) {
+  .lp {
+    --bg: #121826; --bg-2: #1a2232; --card: #1b2435; --ink: #eef1f6; --ink-2: #aab3c4; --ink-3: #8f98aa; --line: rgba(255, 255, 255, 0.13);
+    --accent: #7b9cff; --accent-ink: #a9bdff; --accent-soft: rgba(123, 156, 255, 0.15); --on-accent: #0f1522;
+    --accent-2: #ff9a62; --accent-2-ink: #ffb68a; --accent-2-soft: rgba(255, 154, 98, 0.14);
+    --ok: #5ccf94; --ok-soft: rgba(92, 207, 148, 0.15); --on-ok: #0f1522; --track: rgba(255, 255, 255, 0.1); --chip: #2a3346;
+    --shadow: none; --shadow-lg: none; --cta-shadow: none;
+  }
+}
+
+.lp a { color: var(--accent-ink); }
+.lp p a { font-weight: 650; text-decoration: underline; text-underline-offset: 0.18em; }
+.lp p a:hover { text-decoration-thickness: 2px; }
+.lp a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.lp b, .lp strong { font-weight: 700; }
+/* same edges as the header and footer (max-w-5xl, px-4) */
+.lp .wrap { width: 100%; max-width: 1024px; margin: 0 auto; padding: 0 16px; }
+.lp .ic { flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* chips, as in the guide */
+.lp .chip { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 5px 12px; border-radius: 99px;
+  background: var(--chip); font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.lp .chip.hot { background: var(--accent-2-soft); color: var(--accent-2-ink); font-weight: 650; }
+
+/* hero */
+.lp .hero { padding: 36px 0 56px;
+  background: radial-gradient(560px 420px at 82% 32%, var(--accent-2-soft), transparent 70%), var(--bg); }
+.lp .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 44px; align-items: center; }
+.lp .intro { min-width: 0; }
+.lp .pill { display: inline-block; margin: 0; padding: 6px 12px; border-radius: 99px; background: var(--accent-soft);
+  color: var(--accent-ink); font-size: 14px; font-weight: 650; line-height: 1.4; }
+.lp h1 { margin: 18px 0 0; font: 700 clamp(31px, 8vw, 52px)/1.08 var(--serif); letter-spacing: -0.015em; text-wrap: balance; }
+.lp .lede { margin: 18px 0 0; max-width: 34em; font-size: 18px; line-height: 1.6; color: var(--ink-2); }
+.lp .act { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 28px; }
+.lp .cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 13px 24px;
+  border-radius: 14px; background: var(--accent); color: var(--on-accent); font-size: 18px; font-weight: 700; line-height: 1.3;
+  text-align: center; text-wrap: balance; text-decoration: none; box-shadow: var(--cta-shadow); transition: background-color 0.2s, transform 0.2s; }
+.lp .cta:hover { background: var(--accent-ink); color: var(--on-accent); }
+.lp .cta:active { transform: translateY(1px); }
+.lp .cta:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 14px; }
+.lp .cta .arr { transition: transform 0.2s; }
+.lp .cta:hover .arr { transform: translateX(3px); }
+.lp .note { margin: 0; font-size: 14px; color: var(--ink-2); }
+/* like the guide's orange "Remember" box */
+.lp .why { max-width: 34em; margin: 22px 0 0; padding: 14px 18px; border-radius: 14px; background: var(--accent-2-soft);
+  font-size: 16px; color: var(--ink); }
+.lp .why b { color: var(--accent-2-ink); }
+.lp .login { margin: 16px 0 0; font-size: 15px; color: var(--ink-2); }
+
+/* progress preview: a small version of the guide's top bar and part list */
+.lp .preview { margin: 0; min-width: 0; }
+.lp .stack { position: relative; isolation: isolate; }
+.lp .stack::before { content: ""; position: absolute; z-index: -1; inset: 18px 18px -12px; border: 1px solid var(--line);
+  border-radius: 22px; background: var(--bg-2); }
+.lp .dash { padding: 22px; border: 1px solid var(--line); border-radius: 22px; background: var(--card); box-shadow: var(--shadow-lg); }
+.lp .dash-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.lp .dash-brand { font: 700 18px/1.25 var(--serif); }
+.lp .dash-bar { height: 10px; margin-top: 16px; overflow: hidden; border-radius: 99px; background: var(--track); }
+.lp .dash-bar i { display: block; width: 40%; height: 100%; border-radius: 99px; background: var(--ok); }
+.lp .dash-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.lp .dash-stats > div { min-width: 0; padding: 10px 12px; border-radius: 12px; background: var(--bg); }
+.lp .dash-stats b { display: block; font: 750 clamp(16px, 5vw, 23px)/1.15 var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.lp .dash-stats span { display: block; margin-top: 2px; font-size: 13px; line-height: 1.3; color: var(--ink-2); }
+.lp .dash-stats .score b { color: var(--ok); }
+.lp .dash-parts { display: grid; gap: 2px; margin: 16px 0 0; padding: 0; list-style: none; }
+.lp .dash-parts li { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; border-radius: 10px;
+  font-size: 14px; color: var(--ink-2); }
+.lp .dash-parts .n { flex: none; width: 20px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+.lp .dash-parts .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp .dash-parts .ck { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid var(--line);
+  border-radius: 50%; font-size: 12px; font-weight: 800; line-height: 1; }
+.lp .dash-parts .done .ck { border-color: var(--ok); background: var(--ok); color: var(--on-ok); }
+.lp .dash-saved { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line);
+  font-size: 13px; font-weight: 650; color: var(--ok); }
+.lp .dash-saved span { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--ok-soft); font-size: 11px; }
+.lp .preview figcaption { margin-top: 24px; font-size: 14px; text-align: center; color: var(--ink-2); }
+
+/* sections */
+.lp .band { padding: 56px 0; }
+.lp .band.alt { background: var(--bg-2); }
+/* the guide's unit divider: uppercase label with a line */
+.lp .eyebrow { display: flex; align-items: center; gap: 14px; margin: 0 0 12px; font: 800 13px/1 var(--sans); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-3); }
+.lp .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.lp h2 { margin: 0; font: 700 clamp(26px, 5.5vw, 36px)/1.15 var(--serif); letter-spacing: -0.01em; text-wrap: balance; }
+.lp .sub { margin: 10px 0 0; max-width: 40em; font-size: 17px; color: var(--ink-2); }
+
+/* what your account saves */
+.lp .saves { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin: 28px 0 0; padding: 0; list-style: none; }
+.lp .save { padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); box-shadow: var(--shadow); }
+.lp .ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft);
+  color: var(--accent-ink); font-size: 17px; font-weight: 800; letter-spacing: 0.02em; }
+.lp .ico.ok { background: var(--ok-soft); color: var(--ok); }
+.lp .ico.warm { background: var(--accent-2-soft); color: var(--accent-2-ink); }
+.lp .save h3 { margin: 16px 0 0; font: 700 20px/1.25 var(--serif); }
+.lp .save p { margin: 6px 0 0; font-size: 15px; color: var(--ink-2); }
+.lp .private { margin: 20px 0 0; font-size: 15px; color: var(--ink-2); }
+.lp .private b { color: var(--ink); }
+
+/* available now: a copy of the guide's own hero card */
+.lp .guide { container-type: inline-size; margin: 28px 0 0; overflow: hidden; border: 1px solid var(--line); border-radius: 22px;
+  background: var(--card); box-shadow: var(--shadow); }
+.lp .g-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 22px; border-bottom: 1px solid var(--line);
+  background: var(--bg); }
+.lp .g-brand { font: 700 16px/1.25 var(--serif); }
+.lp .g-lock { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding: 4px 10px; border-radius: 99px;
+  background: var(--chip); color: var(--ink-2); font-size: 13px; font-weight: 650; }
+.lp .g-body { padding: 28px 32px 26px; }
+.lp .g-body h3 { margin: 0 0 8px; font: 700 clamp(23px, 4.5vw, 30px)/1.15 var(--serif); text-wrap: balance; }
+.lp .g-body p { margin: 6px 0; max-width: 46em; color: var(--ink-2); }
+.lp .steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 20px 0 6px; padding: 0; list-style: none; }
+.lp .step { padding: 14px; border-radius: 14px; background: var(--bg); font-size: 14px; color: var(--ink-2); }
+.lp .step b { display: block; margin-bottom: 2px; font-size: 15px; color: var(--ink); }
+.lp .facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+.lp .g-gate { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 14px 32px; border-top: 1px solid var(--line);
+  background: var(--accent-soft); font-size: 15px; color: var(--ink); }
+.lp .g-gate .ic { margin-top: 3px; color: var(--accent-ink); }
+.lp .g-gate b { color: var(--accent-ink); }
+.lp .later { margin: 16px 0 0; font-size: 15px; color: var(--ink-2); }
+@container (min-width: 440px) {
+  .lp .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 780px) {
+  .lp .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 519px) {
+  .lp .cta { width: 100%; padding: 12px 18px; font-size: 17px; }
+  .lp .cta .arr { display: none; }
+  .lp .pill { border-radius: 12px; }
+  .lp .dash { padding: 16px; border-radius: 18px; }
+  .lp .stack::before { inset: 14px 12px -10px; border-radius: 18px; }
+  .lp .dash-stats > div { padding: 8px 10px; }
+  .lp .dash-parts li { gap: 8px; padding: 7px 8px; }
+  .lp .save { padding: 20px 16px; }
+  .lp .guide { border-radius: 16px; }
+  .lp .g-top { padding: 10px 16px; }
+  .lp .g-body { padding: 20px 16px; }
+  .lp .g-gate { padding: 12px 16px; }
+}
+@media (min-width: 640px) {
+  .lp .saves { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 900px) {
+  .lp .hero { padding: 72px 0 88px; }
+  .lp .hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 56px; }
+  .lp .band { padding: 80px 0; }
+}
+@media (min-width: 1000px) {
+  .lp .saves { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp .cta, .lp .cta .arr { transition: none; }
+}
+@media (forced-colors: active) {
+  .lp .cta { border: 2px solid ButtonText; }
+  .lp .dash-bar { border: 1px solid CanvasText; }
+  .lp .dash-bar i { forced-color-adjust: none; background: Highlight; }
+}

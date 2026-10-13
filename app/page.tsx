@@ -1,92 +1,224 @@
 import Link from "next/link";
+import "./landing.css";
 
-const steps = [
+// Public landing page (grading contract in CLAUDE.md): what Unlecture does, who it is for, and ONE sign-up button
+// to /signup. The copy makes clear what the account is for: it keeps each student's progress in the guides.
+// A static server component with no client JS. Styles live in landing.css, scoped to .lp, in the look of the
+// original offline study guide (see app/app/guides/[slug]/guide.css).
+// The guide facts below come from the DAE midterm guide. Update them when the guides change, and drop the exam
+// chip after Fri 16 Oct 2026.
+
+// Example progress for the preview card. The page labels it as an example; the part titles are the real ones.
+const previewParts = [
+  { n: 4, title: "Random variables and the rules for E and Var", state: "done" },
+  { n: 5, title: "Estimators: bias, efficiency and MSE", state: "done" },
+  { n: 6, title: "The simple regression model and its assumptions", state: "todo" },
+  { n: 7, title: "OLS: finding the line", state: "todo" },
+  { n: 8, title: "Residuals, sums of squares and R²", state: "todo" },
+] as const;
+
+const saves = [
   {
-    title: "Watch one short part at a time",
-    body: "Each guide splits a course into short videos that play right on the page, with chapters you can jump between.",
+    icon: "✓",
+    tone: "ok",
+    title: "The parts you finish",
+    body: "Tick a part when you are done, or watch its video to the end and it ticks itself. You always see what is left.",
   },
   {
-    title: "Check yourself with exam-style quizzes",
-    body: "Questions built like the real exam. Every option comes with an explanation and a link to the moment in the video.",
+    icon: "AB",
+    tone: "accent",
+    title: "Your quiz answers",
+    body: "The two options you picked on each question stay checked and explained when you come back.",
   },
   {
-    title: "Practise on paper, then see the answer",
-    body: "Worked exercises to solve by hand. Your answers and progress are saved to your account, on any device.",
+    icon: "%",
+    tone: "accent",
+    title: "Your score",
+    body: "Your marks on every question you have checked, so you know which ones to go back to before the exam.",
+  },
+  {
+    icon: "⇄",
+    tone: "warm",
+    title: "Every device",
+    body: "Start on your laptop, carry on from your phone. Log in and your ticks, answers and score are all there.",
   },
 ];
 
-function GuidePreview() {
+// The four steps as the study guide shows them.
+const steps = [
+  { name: "Watch", text: "Short videos on the page, with more on the way. Pause at every stop sign and solve on paper." },
+  { name: "Remember", text: "Read the key points under the video." },
+  { name: "Quiz", text: "Pick TWO of six, then check. Explanations for every option." },
+  { name: "Paper", text: "Solve the exercises by hand, then open the answer." },
+];
+
+const examFacts = ["On paper · 70 min", "6 options · 2 correct · no penalty", "Formula sheet + basic calculator", "Units I and II · 35 %"];
+
+function LockIcon() {
   return (
-    <div
-      className="card relative overflow-hidden p-5 shadow-[0_20px_60px_-30px_rgba(67,56,202,0.45)] sm:p-6"
-      role="img"
-      aria-label="Example: one part of an exam guide, with a video, a progress bar and a quiz question where two of six answers are correct."
-    >
-      <div className="flex items-center justify-between text-xs font-medium text-muted">
-        <span>Part 7 · OLS regression</span>
-        <span>6 of 15 parts done</span>
+    <svg className="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
+function ProgressPreview() {
+  return (
+    <figure className="preview">
+      <div className="stack">
+        <div
+          className="dash"
+          role="img"
+          aria-label="Example of saved progress in a guide: 6 of 15 parts done, 40 of 108 questions answered, 66 of 80 marks, progress saved."
+        >
+          <div className="dash-head">
+            <span className="dash-brand">DAE Midterm · Study guide</span>
+            <span className="chip">Example</span>
+          </div>
+          <div className="dash-bar">
+            <i />
+          </div>
+          <div className="dash-stats">
+            <div>
+              <b>6/15</b>
+              <span>parts done</span>
+            </div>
+            <div>
+              <b>40/108</b>
+              <span>questions answered</span>
+            </div>
+            <div className="score">
+              <b>66/80</b>
+              <span>quiz marks</span>
+            </div>
+          </div>
+          <ul className="dash-parts">
+            {previewParts.map((p) => (
+              <li key={p.n} className={p.state}>
+                <span className="n">{p.n}</span>
+                <span className="t">{p.title}</span>
+                <span className="ck">{p.state === "done" ? "✓" : ""}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="dash-saved">
+            <span>✓</span> Progress saved to your account
+          </p>
+        </div>
       </div>
-      <div className="mt-3 h-1.5 rounded-full bg-line">
-        <div className="h-full w-2/5 rounded-full bg-ok" />
-      </div>
-      <div className="mt-4 grid aspect-video place-items-center rounded-xl bg-gradient-to-br from-[#1b1d33] to-[#0b0c16] text-white">
-        <span className="grid size-14 place-items-center rounded-full bg-white/15 text-xl">▶</span>
-      </div>
-      <p className="mt-4 text-sm font-semibold">Which TWO statements about OLS are correct?</p>
-      <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-        <span className="rounded-lg border-2 border-ok bg-ok-soft px-2.5 py-2">The residuals sum to zero</span>
-        <span className="rounded-lg border-2 border-line bg-surface px-2.5 py-2 text-muted">R² can be negative</span>
-        <span className="rounded-lg border-2 border-line bg-surface px-2.5 py-2 text-muted">It maximises SSR</span>
-        <span className="rounded-lg border-2 border-ok bg-ok-soft px-2.5 py-2">The line passes through (x̄, ȳ)</span>
-      </div>
-    </div>
+      <figcaption>What your account keeps for each guide, on every device.</figcaption>
+    </figure>
   );
 }
 
 export default function Home() {
   return (
-    <main id="main" className="flex-1">
-      <section className="mx-auto grid w-full max-w-5xl items-center gap-10 px-4 py-12 sm:py-20 md:grid-cols-2">
-        <div>
-          <p className="inline-block rounded-full bg-accent-soft px-3 py-1 text-sm font-medium text-ink">
-            For IE University students with an exam coming up
-          </p>
-          <h1 className="mt-5 text-4xl leading-tight font-bold tracking-tight sm:text-5xl">
-            Exam coming up? Get through the course step by step.
-          </h1>
-          <p className="mt-5 text-lg text-muted">
-            Unlecture exam guides take you through a whole course in one place: short videos, the key points,
-            exam-style quizzes and paper exercises, so you know what to expect on exam day.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link href="/signup" className="btn-primary px-7 text-lg">
-              Sign up free
-            </Link>
-            <p className="text-sm text-muted">No credit card. Your progress stays private.</p>
+    <main id="main" className="lp">
+      <section className="hero" aria-labelledby="lp-title">
+        <div className="wrap hero-grid">
+          <div className="intro">
+            <p className="pill">For IE University students with an exam coming up</p>
+            <h1 id="lp-title">Free exam guides that remember where you left off</h1>
+            <p className="lede">
+              Unlecture takes you through a course step by step before the exam: short videos that play on the page,
+              the key points, exam-style quizzes and paper exercises.
+            </p>
+            <div className="act">
+              <Link href="/signup" className="cta">
+                Sign up free to track your progress
+                <span aria-hidden="true" className="arr">
+                  →
+                </span>
+              </Link>
+              <p className="note">Just an email and a password.</p>
+            </div>
+            <p className="why">
+              <b>Why an account?</b> It saves your quiz answers, the parts you mark done and your score, so you can pick
+              up where you left off on any device. The guides open as soon as you sign up.
+            </p>
+            <p className="login">
+              Already have an account? <Link href="/login">Log in</Link> to see your saved progress.
+            </p>
           </div>
+          <ProgressPreview />
         </div>
-        <GuidePreview />
       </section>
 
-      <section className="border-t border-line bg-surface" aria-labelledby="how-heading">
-        <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:py-16">
-          <h2 id="how-heading" className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            How it works
-          </h2>
-          <ol className="mt-8 grid gap-4 sm:grid-cols-3">
-            {steps.map((step, i) => (
-              <li key={step.title} className="card bg-bg p-5">
-                <span
-                  aria-hidden="true"
-                  className="grid size-9 place-items-center rounded-full bg-accent font-semibold text-accent-ink"
-                >
-                  {i + 1}
+      <section className="band alt" aria-labelledby="saves-title">
+        <div className="wrap">
+          <p className="eyebrow">Why sign up</p>
+          <h2 id="saves-title">Your account keeps track of your progress</h2>
+          <p className="sub">
+            The guides are free. Your account is where your progress lives, so nothing is lost between study sessions.
+          </p>
+          <ul className="saves">
+            {saves.map((s) => (
+              <li key={s.title} className="save">
+                <span aria-hidden="true" className={`ico ${s.tone}`}>
+                  {s.icon}
                 </span>
-                <h3 className="mt-4 font-semibold">{step.title}</h3>
-                <p className="mt-2 text-muted">{step.body}</p>
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
               </li>
             ))}
-          </ol>
+          </ul>
+          <p className="private">
+            <b>Private to you.</b> Other students cannot see your progress, and you can reset a guide at any time.
+          </p>
+        </div>
+      </section>
+
+      <section className="band" aria-labelledby="how-title">
+        <div className="wrap">
+          <p className="eyebrow">Available now</p>
+          <h2 id="how-title">How a guide works</h2>
+          <p className="sub">
+            Each guide splits a course into short parts, and each part has up to four steps. The first guide is ready.
+          </p>
+          <article className="guide" aria-labelledby="guide-title">
+            <div className="g-top">
+              <span className="g-brand">DAE Midterm · Study guide</span>
+              <span className="g-lock">
+                <LockIcon />
+                Free with an account
+              </span>
+            </div>
+            <div className="g-body">
+              <h3 id="guide-title">Data Analysis for Economics: the midterm, step by step</h3>
+              <p>Units I and II in 15 parts, from data and samples to multiple regression, ending with a full mock exam.</p>
+              <p>100+ exam-style questions and 50+ paper exercises in one place. Work from top to bottom.</p>
+              <ol className="steps">
+                {steps.map((s, i) => (
+                  <li key={s.name} className="step">
+                    <b>
+                      <span aria-hidden="true">{i + 1} · </span>
+                      {s.name}
+                    </b>
+                    {s.text}
+                  </li>
+                ))}
+              </ol>
+              <ul className="facts" aria-label="About the exam">
+                <li className="chip hot">
+                  Exam <time dateTime="2026-10-16T14:30:00+02:00">Fri 16 Oct · 14:30</time>
+                </li>
+                {examFacts.map((f) => (
+                  <li key={f} className="chip">
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p className="g-gate">
+              <LockIcon />
+              <span>
+                <b>Opens after you sign up or log in.</b> Your account keeps every quiz answer, every part you mark done
+                and your score.
+              </span>
+            </p>
+          </article>
+          <p className="later">New guides show up in your account as they are published.</p>
         </div>
       </section>
     </main>

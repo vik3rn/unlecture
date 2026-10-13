@@ -32,7 +32,7 @@ export function SiteHeader() {
   return (
     <header className="border-b border-line bg-surface/80 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-3 px-4">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+        <Link href="/" className="flex items-center gap-2 font-serif text-lg font-bold tracking-tight">
           <span aria-hidden="true" className="grid size-8 place-items-center rounded-lg bg-accent text-accent-ink">
             ▶
           </span>
