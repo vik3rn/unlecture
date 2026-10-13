@@ -46,6 +46,20 @@
   font-size: 13px; color: var(--ink-2); }
 .dg .chip.hot { background: var(--orange-soft); color: var(--orange-ink); font-weight: 650; }
 
+/* the student's own exam date */
+.dg .exam-add { margin-top: 18px; padding: 8px 14px; border: 1.5px dashed var(--accent); border-radius: 99px; background: var(--card);
+  color: var(--accent); font-size: 14px; font-weight: 600; cursor: pointer; }
+.dg .exam-add:hover { background: var(--accent-soft); }
+.dg .exam-set { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 18px 0 0; }
+.dg .exam-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-top: 18px; padding: 16px; border: 1px solid var(--line);
+  border-radius: 14px; background: var(--card); }
+.dg .exam-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.dg .exam-form input, .dg .exam-form select { min-height: 40px; padding: 6px 10px; border: 1px solid #8a90a6; border-radius: 10px; background: var(--card);
+  color: var(--ink); font: 15px var(--sans); }
+.dg .exam-form .tz select { max-width: 240px; }
+.dg .exam-actions { display: flex; align-items: center; gap: 10px; }
+.dg .exam-err { flex-basis: 100%; margin: 0; color: var(--bad); font-size: 14px; font-weight: 600; }
+
 /* progress */
 .dg .meter { display: block; height: 8px; overflow: hidden; border-radius: 99px; background: var(--accent-soft); }
 .dg .meter i { display: block; height: 100%; border-radius: 99px; background: var(--accent); transition: width 0.4s; }

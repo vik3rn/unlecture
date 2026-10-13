@@ -28,7 +28,6 @@ async function Preview({ slug }: { slug: string }) {
     <CourseOverview
       title={guide.title}
       summary={guide.summary}
-      exam={c.exam}
       facts={c.facts}
       notOnSheet={c.notOnSheet}
       examDay={c.examDay}

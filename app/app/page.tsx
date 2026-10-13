@@ -2,21 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { formatExam, type ExamSetting } from "@/lib/guides";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Your exam guides" };
 
 type Guide = { id: string; slug: string; title: string; summary: string; part_count: number; exam_at: string | null };
-type ProgressRow = { guide_id: string; done: Record<string, boolean> | null };
+type ProgressRow = { guide_id: string; done: Record<string, boolean> | null; exam: ExamSetting | null };
 
-const examFormat = new Intl.DateTimeFormat("en-GB", {
-  weekday: "short",
-  day: "numeric",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: "Europe/Madrid",
-});
 
 async function GuideList() {
   const supabase = await createClient();
@@ -29,7 +22,7 @@ async function GuideList() {
       .from("guides")
       .select("id, slug, title, summary, part_count, exam_at")
       .order("exam_at", { ascending: true, nullsFirst: false }),
-    supabase.from("guide_progress").select("guide_id, done:progress->done"),
+    supabase.from("guide_progress").select("guide_id, done:progress->done, exam:progress->exam"),
   ]);
 
   if (guidesResult.error) {
@@ -41,9 +34,9 @@ async function GuideList() {
   }
 
   const guides = (guidesResult.data ?? []) as Guide[];
-  const doneByGuide = new Map(
-    ((progressResult.data ?? []) as ProgressRow[]).map((r) => [r.guide_id, Object.keys(r.done ?? {}).length]),
-  );
+  const rows = (progressResult.data ?? []) as ProgressRow[];
+  const doneByGuide = new Map(rows.map((r) => [r.guide_id, Object.keys(r.done ?? {}).length]));
+  const examByGuide = new Map(rows.map((r) => [r.guide_id, r.exam]));
 
   if (guides.length === 0) {
     return (
@@ -66,14 +59,14 @@ async function GuideList() {
             >
               <span className="text-lg font-semibold">{guide.title}</span>
               {guide.summary && <span className="mt-1 text-sm text-muted">{guide.summary}</span>}
-              {guide.exam_at && (
+              {examByGuide.get(guide.id) && (
                 <span className="mt-3 text-sm font-semibold text-warn">
-                  Exam {examFormat.format(new Date(guide.exam_at))}
+                  Your exam: {formatExam(examByGuide.get(guide.id) as ExamSetting)}
                 </span>
               )}
               <span className="mt-auto pt-4">
                 <span className="block h-2 overflow-hidden rounded-full bg-accent-soft" aria-hidden="true">
-                  <span className="block h-full rounded-full bg-ok" style={{ width: `${pct}%` }} />
+                  <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
                 </span>
                 <span className="mt-2 block text-sm text-muted">
                   {done} of {guide.part_count} parts done

@@ -17,7 +17,6 @@ async function Overview({ slug }: { slug: string }) {
     <CourseOverview
       title={guide.title as string}
       summary={guide.summary as string}
-      exam={c.exam}
       facts={c.facts}
       notOnSheet={c.notOnSheet}
       examDay={c.examDay}

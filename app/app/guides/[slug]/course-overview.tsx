@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { PartSummary } from "@/lib/guides";
 import { plain } from "@/lib/guides";
-import { Countdown } from "./countdown";
+import { ExamDate } from "./exam-date";
 import { EMPTY_PROGRESS, saveLabel, useGuide } from "./progress";
 import { Html } from "./ui";
 
@@ -17,7 +17,6 @@ const STEPS = [
 export function CourseOverview({
   title,
   summary,
-  exam,
   facts,
   notOnSheet,
   examDay,
@@ -26,7 +25,6 @@ export function CourseOverview({
 }: {
   title: string;
   summary: string;
-  exam: string | null;
   facts: string[];
   notOnSheet: string[];
   examDay: string[];
@@ -79,13 +77,9 @@ export function CourseOverview({
           <p className="eyebrow">Exam guide</p>
           <h1>{title}</h1>
           {summary && <p className="lede">{summary}</p>}
-          {(exam || facts.length > 0) && (
+          <ExamDate />
+          {facts.length > 0 && (
             <ul className="facts" aria-label="Exam facts">
-              {exam && (
-                <li>
-                  <Countdown exam={exam} className="chip hot" />
-                </li>
-              )}
               {facts.map((f) => (
                 <li key={f}>
                   <Html html={f} className="chip" />

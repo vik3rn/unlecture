@@ -195,3 +195,45 @@ export const summarizeParts = (c: GuideContent): PartSummary[] =>
     locked: !!p.locked,
     qs: questionKeys(p).map(({ q, key }) => ({ key, correct: q.correct })),
   }));
+
+// A student's exam: a local date and time in an IANA time zone ("2026-10-16", "14:30", "Europe/Madrid").
+export type ExamSetting = { date: string; time: string; tz: string };
+
+// The exact moment of a local date/time in a time zone, without a date library: guess UTC, measure the zone's
+// offset at that instant with Intl, correct, and measure once more for daylight-saving edges.
+export function examInstant({ date, time, tz }: ExamSetting): number {
+  const [y, m, d] = date.split("-").map(Number);
+  const [hh, mm] = time.split(":").map(Number);
+  const asUtc = Date.UTC(y, m - 1, d, hh, mm);
+  const offset = (t: number) => {
+    const p = Object.fromEntries(
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        hourCycle: "h23",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+        .formatToParts(t)
+        .map((x) => [x.type, x.value]),
+    );
+    return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second) - t;
+  };
+  const first = asUtc - offset(asUtc);
+  return asUtc - offset(first);
+}
+
+// "Fri 16 Oct, 14:30 CEST" in the exam's own time zone.
+export const formatExam = (e: ExamSetting) =>
+  new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: e.tz,
+    timeZoneName: "short",
+  }).format(examInstant(e));
