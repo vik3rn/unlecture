@@ -1,38 +1,26 @@
-/* Landing page ("/") in the look of the original offline study guide: warm paper, Georgia headings, blue accent,
-   orange accent-2, 22px cards, chips and steps. Same tokens as app/app/guides/[slug]/guide.css (.dg).
-   Everything is scoped to .lp: Next.js keeps a page's stylesheet loaded after client navigation.
-   Inside .lp, --accent-ink means accent-coloured TEXT (as in guide.css), not text on the accent as in globals.css,
-   so do not use Tailwind colour utilities inside .lp.
-   WCAG 2.1 AA, lowest text pairs: light ink-3 on bg-2 4.84, ok on bg-2 4.96, accent-2-ink on accent-2-soft 5.08,
-   ok on ok-soft 5.24, white on the button 5.96; dark ok on ok-soft 5.85, ink-3 on card 5.36, ink-2 on chip 6.00, button text 6.99. */
+/* Landing page ("/"): clean, light and modern, built on the logo (white, logo blue #2c5bd1, logo orange #f59a5c used
+   sparingly), Geist throughout. Always light. Everything is scoped to .lp: Next.js keeps a page's stylesheet loaded after
+   client navigation. Inside .lp, --accent-ink means accent-coloured TEXT, not text on the accent as in globals.css.
+   WCAG 2.1 AA: lowest text pairs ink-3 on bg-2 4.56, accent-ink on accent-soft 5.22, accent-2-ink on accent-2-soft 5.88,
+   white on the button 5.96. */
 .lp {
-  --bg: #f5f3ec; --bg-2: #ebe8de; --card: #fffdf8; --ink: #1c2130; --ink-2: #4b5365; --ink-3: #5d6473; --line: #d9d5c8;
-  --accent: #2c5bd1; --accent-ink: #1f46ad; --accent-soft: #e2e9fb; --on-accent: #ffffff;
-  --accent-2: #f59a5c; --accent-2-ink: #9c4317; --accent-2-soft: #fdebdf;
+  --bg: #ffffff; --bg-2: #f5f8ff; --card: #ffffff; --ink: #14183a; --ink-2: #4f5675; --ink-3: #6a7090; --line: #e4e8f1;
+  --accent: #2c5bd1; --accent-ink: #2c5bd1; --accent-soft: #eaf0ff; --on-accent: #ffffff;
+  --accent-2: #f59a5c; --accent-2-ink: #9c4317; --accent-2-soft: #fff1e8;
   --accent-fill: #2c5bd1; --accent-fill-hover: #1f46ad; --on-accent-fill: #ffffff;
-  --ok: #17704a; --ok-soft: #def3e8; --on-ok: #ffffff; --track: #ebe8de; --chip: #ebe8de;
-  --shadow: 0 8px 24px rgba(30, 30, 40, 0.07);
-  --shadow-lg: 0 28px 60px -30px rgba(30, 40, 80, 0.35);
+  --ok: #2c5bd1; --ok-soft: #eaf0ff; --on-ok: #ffffff; --track: #e9eef9; --chip: #f1f4fa;
+  --shadow: 0 1px 2px rgba(20, 24, 58, 0.04), 0 8px 24px rgba(20, 24, 58, 0.05);
+  --shadow-lg: 0 30px 60px -30px rgba(44, 91, 209, 0.35);
   --cta-shadow: 0 12px 24px -14px rgba(44, 91, 209, 0.7);
-  --serif: Georgia, "Times New Roman", serif;
-  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
+  --sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --serif: var(--sans);
   flex: 1 0 auto;
   overflow-x: clip;
   background: var(--bg);
   color: var(--ink);
-  font: 16px/1.55 var(--sans);
+  font: 16px/1.6 var(--sans);
   -webkit-font-smoothing: antialiased;
   overflow-wrap: break-word;
-}
-@media (prefers-color-scheme: dark) {
-  .lp {
-    --bg: #121826; --bg-2: #1a2232; --card: #1b2435; --ink: #eef1f6; --ink-2: #aab3c4; --ink-3: #8f98aa; --line: rgba(255, 255, 255, 0.13);
-    --accent: #7b9cff; --accent-ink: #a9bdff; --accent-soft: rgba(123, 156, 255, 0.15); --on-accent: #0f1522;
-    --accent-2: #f59a5c; --accent-2-ink: #f8b38a; --accent-2-soft: rgba(245, 154, 92, 0.14);
-    --accent-fill: #2c5bd1; --accent-fill-hover: #3a68dd; --on-accent-fill: #ffffff;
-    --ok: #5ccf94; --ok-soft: rgba(92, 207, 148, 0.15); --on-ok: #0f1522; --track: rgba(255, 255, 255, 0.1); --chip: #2a3346;
-    --shadow: none; --shadow-lg: none; --cta-shadow: none;
-  }
 }
 
 .lp a { color: var(--accent-ink); }
@@ -51,12 +39,12 @@
 
 /* hero */
 .lp .hero { padding: 36px 0 56px;
-  background: radial-gradient(560px 420px at 82% 32%, var(--accent-2-soft), transparent 70%), var(--bg); }
+  background: radial-gradient(620px 460px at 82% 30%, var(--accent-soft), transparent 70%), var(--bg); }
 .lp .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 44px; align-items: center; }
 .lp .intro { min-width: 0; }
 .lp .pill { display: inline-block; margin: 0; padding: 6px 12px; border-radius: 99px; background: var(--accent-soft);
   color: var(--accent-ink); font-size: 14px; font-weight: 650; line-height: 1.4; }
-.lp h1 { margin: 18px 0 0; font: 700 clamp(31px, 8vw, 52px)/1.08 var(--serif); letter-spacing: -0.015em; text-wrap: balance; }
+.lp h1 { margin: 18px 0 0; font: 700 clamp(32px, 8vw, 54px)/1.06 var(--serif); letter-spacing: -0.035em; text-wrap: balance; }
 .lp .lede { margin: 18px 0 0; max-width: 34em; font-size: 18px; line-height: 1.6; color: var(--ink-2); }
 .lp .act { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 28px; }
 .lp .cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 13px 24px;
@@ -111,7 +99,7 @@
 .lp .eyebrow { display: flex; align-items: center; gap: 14px; margin: 0 0 12px; font: 800 13px/1 var(--sans); letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--ink-3); }
 .lp .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
-.lp h2 { margin: 0; font: 700 clamp(26px, 5.5vw, 36px)/1.15 var(--serif); letter-spacing: -0.01em; text-wrap: balance; }
+.lp h2 { margin: 0; font: 700 clamp(26px, 5.5vw, 36px)/1.12 var(--serif); letter-spacing: -0.03em; text-wrap: balance; }
 .lp .sub { margin: 10px 0 0; max-width: 40em; font-size: 17px; color: var(--ink-2); }
 
 /* what your account saves */
@@ -135,9 +123,12 @@
 .lp .g-lock { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding: 4px 10px; border-radius: 99px;
   background: var(--chip); color: var(--ink-2); font-size: 13px; font-weight: 650; }
 .lp .g-body { padding: 28px 32px 26px; }
-.lp .g-body h3 { margin: 0 0 8px; font: 700 clamp(23px, 4.5vw, 30px)/1.15 var(--serif); text-wrap: balance; }
+.lp .g-body h3 { margin: 0 0 8px; font: 700 clamp(23px, 4.5vw, 30px)/1.15 var(--serif); letter-spacing: -0.025em; text-wrap: balance; }
 .lp .g-body p { margin: 6px 0; max-width: 46em; color: var(--ink-2); }
-.lp .steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 20px 0 6px; padding: 0; list-style: none; }
+.lp .steps { display: grid; grid-auto-flow: column; grid-auto-columns: 78%; gap: 12px; margin: 20px 0 6px; padding: 0 0 6px; list-style: none;
+  overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.lp .steps:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 14px; }
+.lp .step { scroll-snap-align: start; }
 .lp .step { padding: 14px; border-radius: 14px; background: var(--bg); font-size: 14px; color: var(--ink-2); }
 .lp .step b { display: block; margin-bottom: 2px; font-size: 15px; color: var(--ink); }
 .lp .facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
@@ -147,10 +138,10 @@
 .lp .g-gate b { color: var(--accent-ink); }
 .lp .later { margin: 16px 0 0; font-size: 15px; color: var(--ink-2); }
 @container (min-width: 440px) {
-  .lp .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp .steps { grid-auto-columns: 46%; }
 }
 @container (min-width: 780px) {
-  .lp .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lp .steps { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; padding: 0; }
 }
 
 @media (max-width: 519px) {

@@ -32,8 +32,9 @@ The free preview reads guides on the server with `SUPABASE_SECRET_KEY` (Supabase
 | `/signup` | Sign up with email + password, then go to `/app` |
 | `/login`  | Log in with email + password, then go to `/app`  |
 | `/app`    | Exam guides and your study list (logged-in users only) |
-| `/guides/[slug]` | Free preview of a guide without an account (only the preview part; nothing is saved) |
-| `/app/guides/[slug]` | One exam guide with videos, quizzes and saved progress |
+| `/guides/[slug]` and `/guides/[slug]/[part]` | Free preview without an account: overview with locked parts, and the open part (nothing is saved) |
+| `/app/guides/[slug]` | Course overview: all parts with your status and where to continue |
+| `/app/guides/[slug]/[part]` | One part: video, key points, quiz, paper exercises, previous/next |
 
 ## Project layout
 

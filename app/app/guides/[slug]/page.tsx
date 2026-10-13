@@ -1,59 +1,38 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { parseGuideContent, summarizeParts } from "@/lib/guides";
 import { createClient } from "@/lib/supabase/server";
-import { parseGuideContent } from "@/lib/guides";
-import type { GuideProgress } from "../actions";
-import { GuideView } from "./guide-view";
-import "./guide.css";
+import { CourseOverview } from "./course-overview";
 
 export const metadata: Metadata = { title: "Exam guide" };
 
-async function GuideDetail({ slug }: { slug: string }) {
+// Course overview: all parts with the student's status, and where to continue.
+async function Overview({ slug }: { slug: string }) {
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getClaims();
-  if (!auth?.claims?.sub) redirect("/login");
-
-  // RLS: any logged-in user can read guides; progress rows are the user's own.
-  const { data: guide } = await supabase
-    .from("guides")
-    .select("id, title, summary, content")
-    .eq("slug", slug)
-    .maybeSingle();
+  const { data: guide } = await supabase.from("guides").select("title, summary, content").eq("slug", slug).maybeSingle();
   if (!guide) notFound();
-
-  const { data: row } = await supabase
-    .from("guide_progress")
-    .select("progress")
-    .eq("guide_id", guide.id)
-    .maybeSingle();
-
+  const c = parseGuideContent(guide.content);
   return (
-    <GuideView
-      slug={slug}
-      guideId={guide.id as string}
+    <CourseOverview
       title={guide.title as string}
       summary={guide.summary as string}
-      content={parseGuideContent(guide.content)}
-      initialProgress={(row?.progress ?? null) as GuideProgress | null}
+      exam={c.exam}
+      facts={c.facts}
+      notOnSheet={c.notOnSheet}
+      examDay={c.examDay}
+      credit={c.credit}
+      parts={summarizeParts(c)}
     />
   );
 }
 
 export default function GuidePage({ params }: PageProps<"/app/guides/[slug]">) {
   return (
-    <main id="main" className="flex-1">
-      <Suspense
-        fallback={
-          <div className="dg">
-            <p className="loading">Loading the guide…</p>
-          </div>
-        }
-      >
-        {params.then(({ slug }) => (
-          <GuideDetail slug={slug} />
-        ))}
-      </Suspense>
-    </main>
+    <Suspense fallback={<div className="dg"><p className="loading">Loading the guide…</p></div>}>
+      {params.then(({ slug }) => (
+        <Overview slug={slug} />
+      ))}
+    </Suspense>
   );
 }

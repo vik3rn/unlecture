@@ -33,7 +33,7 @@ An automated bot grades this app on its public Vercel URL, acting like a strange
 **One-liner:** Unlecture exam guides take IE students through a course step by step before the exam, so they know what to expect on exam day.
 
 - **Who:** IE University students with an exam in the next two weeks.
-- **Exam guides:** curated by the project owner and stored in the `guides` table (read-only for users; content is loaded with a seed SQL file that is NOT in this repo). One guide = parts with an embedded YouTube video (unlisted, `youtube-nocookie`, loaded only when the student presses play), chapters, key points, exam-style quizzes (pick two of six) and paper exercises.
+- **Exam guides:** curated by the project owner and stored in the `guides` table (read-only for users; content is loaded with a seed SQL file that is NOT in this repo). A guide has a course overview (`/app/guides/[slug]`) and one page per part (`/app/guides/[slug]/[part]`); progress lives in the guide layout (`progress.tsx`). One guide = parts with an embedded video (unlisted, `youtube-nocookie`, loaded only when the student presses play), chapters, key points, exam-style quizzes (pick two of six) and paper exercises.
 - **Progress:** quiz answers and "done" marks are saved per user in `guide_progress` (RLS: own rows only) through a server action that validates the shape.
 - **Main feature (core):** on `/app` the user types a course or topic they need a guide for in `core-input` and clicks `core-submit`. It is saved at once to their study list (`study_packs` table) and shown as a `core-item`. Saving never calls an AI API.
 - **Data:** private. Each user sees only their own study list and progress. Guides are visible to every logged-in user.

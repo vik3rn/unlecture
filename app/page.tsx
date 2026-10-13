@@ -119,7 +119,7 @@ export default function Home() {
         <div className="wrap hero-grid">
           <div className="intro">
             <p className="pill">For IE University students with an exam coming up</p>
-            <h1 id="lp-title">Free exam guides that remember where you left off</h1>
+            <h1 id="lp-title">Exam guides for IE students</h1>
             <p className="lede">
               Unlecture takes you through a course step by step before the exam: short videos that play on the page,
               the key points, exam-style quizzes and paper exercises.
@@ -192,7 +192,7 @@ export default function Home() {
               <h3 id="guide-title">Data Analysis for Economics: the midterm, step by step</h3>
               <p>Units I and II in 15 parts, from data and samples to multiple regression, ending with a full mock exam.</p>
               <p>100+ exam-style questions and 50+ paper exercises in one place. Work from top to bottom.</p>
-              <ol className="steps">
+              <ol className="steps" tabIndex={0} aria-label="How a guide works">
                 {steps.map((s, i) => (
                   <li key={s.name} className="step">
                     <b>

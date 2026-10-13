@@ -1,60 +1,39 @@
 @import "tailwindcss";
 
-/* Design tokens: the warm-paper palette of the original study guide (same values as guide.css and landing.css).
-   Here --accent-ink is the text colour ON the accent colour (buttons). Dark-mode tints are solid colours so
-   Tailwind opacity modifiers (bg-surface/80, bg-danger/10) stay predictable.
-   All text/background pairs meet WCAG 2.1 AA (4.5:1) in light and dark; --line-strong (form field borders) and
+/* Design tokens: light theme built on the logo (white, logo blue #2c5bd1, logo orange #f59a5c used sparingly).
+   The site is always light (the owner's choice), so there is no dark palette. --accent-ink is the text colour ON
+   the accent colour. All text/background pairs meet WCAG 2.1 AA (4.5:1); --line-strong (form field borders) and
    the focus ring meet 3:1. */
 :root {
-  --bg: #f5f3ec;
-  --surface: #fffdf8;
-  --ink: #1c2130;
-  --muted: #4b5365;
-  --line: #d9d5c8;
-  --line-strong: #8a8577;
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --tint: #f5f8ff;
+  --ink: #14183a;
+  --muted: #4f5675;
+  --line: #e4e8f1;
+  --line-strong: #8a90a6;
   --accent: #2c5bd1;
   --accent-hover: #1f46ad;
   --accent-ink: #ffffff;
-  --accent-soft: #e2e9fb;
-  /* Filled controls use the logo blue in both modes. */
+  --accent-soft: #eaf0ff;
   --accent-fill: #2c5bd1;
   --accent-fill-hover: #1f46ad;
   --on-accent-fill: #ffffff;
+  --orange: #f59a5c;
   --danger: #b42318;
-  --danger-soft: #fbe5e2;
+  --danger-soft: #fdeceb;
   --ok: #17704a;
-  --ok-soft: #def3e8;
-  --warn: #a8431a;
-  --warn-soft: #fdebdf;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #121826;
-    --surface: #1b2435;
-    --ink: #eef1f6;
-    --muted: #aab3c4;
-    --line: #343c4c;
-    --line-strong: #6b768d;
-    --accent: #7b9cff;
-    --accent-hover: #a9bdff;
-    --accent-ink: #0f1522;
-    --accent-soft: #263252;
-    --accent-fill: #2c5bd1;
-    --accent-fill-hover: #3a68dd;
-    --on-accent-fill: #ffffff;
-    --danger: #ff8b7c;
-    --danger-soft: #3a2730;
-    --ok: #5ccf94;
-    --ok-soft: #1d3a33;
-    --warn: #f8b38a;
-    --warn-soft: #3a2b25;
-  }
+  --ok-soft: #e3f5ec;
+  --warn: #9c4317;
+  --warn-soft: #fff1e8;
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
+  --color-tint: var(--tint);
+  --color-orange: var(--orange);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);

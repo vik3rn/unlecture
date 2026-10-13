@@ -154,3 +154,44 @@ export function previewContent(c: GuideContent): GuideContent {
     ),
   };
 }
+
+// Text for places that cannot hold HTML (menus, aria labels, the page title).
+export const plain = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, "")
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+
+export const mmss = (s: number) => {
+  const t = Math.round(s);
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
+};
+
+// What the course overview needs per part (no question text): titles, sizes and the keys/answers for scoring.
+export type PartSummary = {
+  n: number;
+  title: string;
+  unit: string;
+  dur: string;
+  chapters: number;
+  works: number;
+  hasVideo: boolean;
+  locked: boolean;
+  qs: { key: string; correct: string[] }[];
+};
+
+export const summarizeParts = (c: GuideContent): PartSummary[] =>
+  c.parts.map((p) => ({
+    n: p.n,
+    title: p.title,
+    unit: p.unit,
+    dur: p.dur,
+    chapters: Math.max(0, p.chapters.length - 1),
+    works: p.works.length,
+    hasVideo: !!(p.file || p.yt),
+    locked: !!p.locked,
+    qs: questionKeys(p).map(({ q, key }) => ({ key, correct: q.correct })),
+  }));

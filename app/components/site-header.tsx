@@ -31,9 +31,9 @@ async function AuthNav() {
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-line bg-surface/80 backdrop-blur">
+    <header className="border-b border-line bg-surface">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-3 px-4">
-        <Link href="/" className="flex items-center gap-2 font-serif text-lg font-bold tracking-tight">
+        <Link href="/" className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
           <LogoMark size={32} />
           Unlecture
         </Link>
