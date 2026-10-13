@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { logout } from "@/app/actions/auth";
 import { LogoMark } from "@/app/components/logo";
+import { isAdmin } from "@/lib/admin";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 async function AuthNav() {
@@ -17,6 +18,11 @@ async function AuthNav() {
 
   return (
     <div className="flex items-center gap-2">
+      {isAdmin(user.email) && (
+        <Link href="/app/admin" className="btn-ghost">
+          Admin
+        </Link>
+      )}
       <Link href="/app" className="btn-ghost">
         My guides
       </Link>

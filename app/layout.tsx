@@ -35,7 +35,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         <footer className="border-t border-line">
           <div className="mx-auto w-full max-w-5xl px-4 py-6 text-sm text-muted">
-            Unlecture is a student project and is not an official IE University product.
+            Unlecture is a student project and is not an official IE University product. Privacy: we store your email
+            and your study progress to run the app, and the project owner can see them to improve the guides.
           </div>
         </footer>
       </body>

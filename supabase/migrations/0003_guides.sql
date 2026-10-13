@@ -72,3 +72,5 @@ create policy "guide_progress_delete_own" on public.guide_progress
 
 revoke all on table public.guide_progress from anon;
 grant select, insert, update, delete on table public.guide_progress to authenticated;
+-- The owner-only admin page (/app/admin) reads all progress rows on the server with the secret key.
+grant select on table public.guide_progress to service_role;
