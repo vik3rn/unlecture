@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { LogoMark } from "@/app/components/logo";
 import { LETTERS, questionKeys, type GuideContent, type GuidePart, type GuideQuestion } from "@/lib/guides";
 import { saveGuideProgress, type GuideProgress } from "../actions";
 
@@ -553,15 +554,30 @@ function PartSection({
             }
           />
         ) : hasVideo ? (
-          <button type="button" className="play" onClick={() => seek(0)}>
-            <span>
-              <span className="circle" aria-hidden="true">
-                ▶
-              </span>
-              <span className="t1">
-                Play Part {part.n} · {part.dur}
-              </span>
-              <span className="t2">Plays here on the page</span>
+          <button
+            type="button"
+            className="play thumb"
+            onClick={() => seek(0)}
+            aria-label={`Play Part ${part.n}: ${plain(part.title)} (${part.dur})`}
+          >
+            <span className="th-pill">
+              Part {part.n} · <Html html={part.unit} />
+            </span>
+            <span className="th-title">
+              <Html html={part.title} />
+            </span>
+            <span className="th-meta">
+              {part.dur}
+              {part.chapters.length > 1 && ` · ${part.chapters.length - 1} chapters`}
+            </span>
+            <span className="circle" aria-hidden="true">
+              ▶
+            </span>
+            <span className="th-brand" aria-hidden="true">
+              <LogoMark size={22} /> Unlecture
+            </span>
+            <span className="th-note" aria-hidden="true">
+              Plays here on the page
             </span>
           </button>
         ) : (

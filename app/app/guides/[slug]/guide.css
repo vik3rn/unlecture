@@ -91,17 +91,29 @@
 .dg .done-toggle input { width: 18px; height: 18px; accent-color: var(--ok); }
 .dg .vid { margin: 18px 0 10px; border-radius: 14px; overflow: hidden; background: #000; aspect-ratio: 16 / 9; position: relative; }
 .dg .vid iframe, .dg .vid video { width: 100%; height: 100%; display: block; border: 0; background: #000; }
-.dg .vid .play { width: 100%; height: 100%; display: grid; place-items: center; text-align: center; cursor: pointer; border: 0; color: #fff;
-  background: radial-gradient(circle at 50% 45%, #26304a, #0d111b 70%); }
-.dg .vid .play .circle { display: grid; place-items: center; width: 76px; height: 76px; margin: 0 auto; border-radius: 50%; background: rgba(255, 255, 255, 0.16); font-size: 28px; transition: background 0.2s; }
-.dg .vid .play:hover .circle, .dg .vid .play:focus-visible .circle { background: rgba(255, 255, 255, 0.28); }
-.dg .vid .play { border-radius: inherit; }
+/* Thumbnail on the play button: the videos' own navy, part pill, serif title, length and the logo. */
+.dg .vid { container-type: inline-size; }
+.dg .vid .play { position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; cursor: pointer; text-align: left; color: #fff;
+  background: radial-gradient(70% 90% at 92% 8%, rgba(44, 91, 209, 0.55), transparent 60%), radial-gradient(50% 60% at 0% 100%, rgba(245, 154, 92, 0.16), transparent 70%), #131826; }
 .dg .vid .play:focus-visible { outline: 3px solid #fff; outline-offset: -6px; }
-.dg .vid .play .t1 { display: block; margin-top: 12px; font-weight: 700; }
-.dg .vid .play .t2 { display: block; margin-top: 2px; font-size: 14px; color: rgba(255, 255, 255, 0.78); }
+.dg .vid .th-pill { position: absolute; left: 6.5cqw; top: 6.5cqw; padding: 0.5cqw 1.4cqw; border-radius: 99px; background: #eef1f6; color: #131826;
+  font: 800 max(10px, 1.6cqw)/1.3 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; }
+.dg .vid .th-title { position: absolute; left: 6.5cqw; right: 26cqw; top: 15cqw; font: 700 max(17px, 5cqw)/1.12 var(--serif); color: #fff;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.dg .vid .th-meta { position: absolute; left: 6.5cqw; bottom: 15cqw; font: 700 max(12px, 2.2cqw)/1.2 var(--sans); color: #f8b38a; }
+.dg .vid .play .circle { position: absolute; right: 7cqw; top: 50%; translate: 0 -50%; display: grid; place-items: center; width: max(52px, 12cqw); height: max(52px, 12cqw);
+  border-radius: 50%; background: #2c5bd1; color: #fff; font-size: max(20px, 4cqw); box-shadow: 0 0 0 max(6px, 1.4cqw) rgba(255, 255, 255, 0.12); transition: transform 0.2s, background 0.2s; }
+.dg .vid .play:hover .circle, .dg .vid .play:focus-visible .circle { background: #3a68dd; transform: scale(1.06); }
+.dg .vid .th-brand { position: absolute; left: 6.5cqw; bottom: 5.5cqw; display: inline-flex; align-items: center; gap: 8px; font: 700 max(12px, 1.9cqw)/1 var(--serif); color: #eef1f6; }
+.dg .vid .th-note { position: absolute; right: 6.5cqw; bottom: 5.5cqw; font-size: max(11px, 1.6cqw); color: rgba(238, 241, 246, 0.82); }
+@container (max-width: 420px) {
+  .dg .vid .th-meta { bottom: 16cqw; }
+  .dg .vid .th-note { display: none; }
+  .dg .vid .th-title { top: 17cqw; right: 30cqw; -webkit-line-clamp: 2; }
+}
 .dg .vid .soon { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: #e8ebf2; font-size: 15px; background: #1a2232; }
 .dg .chaps { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
-.dg .chaps button { border: 1px solid var(--line); background: var(--bg); border-radius: 99px; padding: 4px 11px; font-size: 13px; color: var(--ink-2); cursor: pointer; min-height: 32px; }
+.dg .chaps button { border: 1px solid var(--line); background: var(--bg); border-radius: 99px; padding: 4px 11px; font-size: 13px; color: var(--ink-2); cursor: pointer; min-height: 32px; text-align: left; }
 .dg .chaps button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-ink); }
 .dg .chaps button:disabled { cursor: default; }
 .dg .chaps button.cur { background: var(--accent-fill); border-color: var(--accent); color: var(--on-accent-fill); }
@@ -200,4 +212,5 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .dg .top .bar i, .dg .vid .play .circle { transition: none; }
+  .dg .vid .play:hover .circle { transform: none; }
 }
