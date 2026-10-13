@@ -3,21 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { deleteStudyPack } from "./actions";
-import { NewPackForm } from "./new-pack-form";
 
 export const metadata: Metadata = { title: "Your exam guides" };
 
-type StudyPack = { id: string; title: string; created_at: string };
 type Guide = { id: string; slug: string; title: string; summary: string; part_count: number; exam_at: string | null };
 type ProgressRow = { guide_id: string; done: Record<string, boolean> | null };
-
-const dateFormat = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "Europe/Madrid",
-});
 
 const examFormat = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
@@ -97,62 +87,6 @@ async function GuideList() {
   );
 }
 
-async function StudyPackList() {
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getClaims();
-  if (!auth?.claims?.sub) redirect("/login");
-
-  const { data, error } = await supabase
-    .from("study_packs")
-    .select("id, title, created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return (
-      <p role="alert" className="text-danger">
-        Could not load your study list: {error.message}
-      </p>
-    );
-  }
-
-  const packs = (data ?? []) as StudyPack[];
-
-  if (packs.length === 0) {
-    return (
-      <div className="card border-dashed p-6 text-center text-muted">
-        Nothing on your list yet. Add the first course or topic you need to study.
-      </div>
-    );
-  }
-
-  return (
-    <ul className="space-y-3" aria-label="Your study list">
-      {packs.map((pack) => (
-        <li
-          key={pack.id}
-          data-testid="core-item"
-          className="card flex items-start justify-between gap-3 p-4"
-        >
-          <div className="min-w-0">
-            <p className="font-medium break-words">{pack.title}</p>
-            <p className="mt-1 text-sm text-muted">Added {dateFormat.format(new Date(pack.created_at))}</p>
-          </div>
-          <form action={deleteStudyPack}>
-            <input type="hidden" name="id" value={pack.id} />
-            <button
-              type="submit"
-              className="btn-ghost shrink-0 text-sm"
-              aria-label={`Remove “${pack.title}” from your list`}
-            >
-              Remove
-            </button>
-          </form>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export default function AppPage() {
   return (
     <main id="main" className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:py-12">
@@ -169,20 +103,6 @@ export default function AppPage() {
         <Suspense fallback={<p className="text-muted">Loading the guides…</p>}>
           <GuideList />
         </Suspense>
-      </section>
-
-      <section className="mt-12" aria-labelledby="list-heading">
-        <h2 id="list-heading" className="text-xl font-semibold tracking-tight">
-          Your study list
-        </h2>
-        <div className="mt-4">
-          <NewPackForm />
-        </div>
-        <div className="mt-6">
-          <Suspense fallback={<p className="text-muted">Loading your study list…</p>}>
-            <StudyPackList />
-          </Suspense>
-        </div>
       </section>
     </main>
   );

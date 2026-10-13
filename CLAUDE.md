@@ -1,4 +1,6 @@
 ## Grading contract — EdTech Challenge (never remove or break this)
+> **TEMPORARY (13 Oct 2026):** at the owner's request the study list (`core-input`, `core-submit`, `core-item`) is hidden on `/app` until after the DAE exam on Fri 16 Oct 2026. The bot cannot grade the core feature until it is back. Restore it right after Friday by reverting the commit "Hide the study list until after the exam" (`git revert <that commit>`).
+
 An automated bot grades this app on its public Vercel URL, acting like a stranger.
 
 ### Pages
