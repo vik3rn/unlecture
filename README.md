@@ -8,7 +8,7 @@ Built with Next.js 16 (App Router), Tailwind CSS 4 and Supabase (Auth + Postgres
 
 1. Install Node.js 20 or newer.
 2. Copy `.env.example` to `.env.local` and fill in your Supabase URL and publishable key.
-3. Create the tables: paste `supabase/migrations/0001_study_packs.sql` and then `supabase/migrations/0003_guides.sql` into Supabase → SQL Editor → Run.
+3. Create the tables: paste `supabase/migrations/0001_study_packs.sql`, then `supabase/migrations/0003_guides.sql`, then `supabase/migrations/0004_guide_time.sql` (study time) into Supabase → SQL Editor → Run.
    Guide content is not stored in this repository. It is loaded into the `guides` table with a separate seed SQL file.
 4. In Supabase → Authentication → Sign In / Providers → Email, switch **Confirm email** off.
 5. Install and start:
@@ -40,6 +40,7 @@ The free preview reads guides on the server with `SUPABASE_SECRET_KEY` (Supabase
 
 - `proxy.ts` and `lib/supabase/proxy.ts`: refresh the session cookie and redirect logged-out users away from `/app`.
 - `lib/supabase/server.ts`: Supabase client for server code.
+- `app/app/guides/[slug]/study-timer.tsx`, `lib/study-tracker.ts`, `app/api/guide-time/route.ts` and `lib/guide-time.ts`: active study time per day and part (`guide_time` table, written only through the `add_guide_time` database function), shown on the owner-only `/app/admin`.
 - `app/actions/auth.ts`: sign up, log in, log out (server actions).
 - `app/app/`: the guide list and the study list (`study_packs` table).
 - `app/app/guides/`: the guide page and the server action that saves progress.
