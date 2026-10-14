@@ -75,7 +75,7 @@
 
 /* the example collage (decorative, one role="img" with a label) */
 .lp .collage-wrap { flex: 1 1 520px; min-width: 0; }
-.lp .collage { position: relative; height: 640px; margin: 0; }
+.lp .collage { position: relative; height: 670px; margin: 0; }
 .lp .vid { position: absolute; left: 0; right: 4%; top: 0; overflow: hidden; border-radius: 22px; background: var(--dark);
   box-shadow: var(--shadow-lg); }
 .lp .vid-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px;
@@ -172,15 +172,6 @@
   from { opacity: 0; transform: perspective(1400px) rotateX(-70deg) translateY(14px); }
   to { opacity: 1; transform: none; }
 }
-.lp .dots { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; margin-top: 18px; }
-.lp .dot { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: none;
-  cursor: pointer; }
-.lp .dot::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: #c5cde3; transition: width 0.3s, background-color 0.3s; }
-.lp .dot.on::before { width: 26px; border-radius: 99px; background: var(--accent); }
-.lp .dot:focus-visible, .lp .pause:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.lp .pause { min-height: 28px; margin-left: 8px; padding: 2px 12px; border: 1px solid var(--line); border-radius: 99px; background: #fff;
-  color: var(--ink-2); font: 600 13px var(--sans); cursor: pointer; }
-
 /* a little motion: the hero rises in, cards lift on hover, sections ease in while scrolling */
 .lp .intro > * { animation: lp-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .lp .intro > :nth-child(2) { animation-delay: 0.06s; }
@@ -239,7 +230,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lp .cta, .lp .cta .arr, .lp .course, .lp .exam-bar i, .lp .dot::before { transition: none; }
+  .lp .cta, .lp .cta .arr, .lp .course, .lp .exam-bar i { transition: none; }
   .lp .flip, .lp .intro > *, .lp .step, .lp .keeps li { animation: none; }
   .lp .course:hover { transform: none; }
 }

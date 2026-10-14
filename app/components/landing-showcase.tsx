@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 // The example collage on the landing page: a video part, a quiz question and an exam countdown that flip to the next
 // of five real examples from the guides every 5 seconds (one card after the other). The numbers are taken from the
 // checked course scripts (MC Parts 0, 2, 8, 9, 12 and DAE Part 7), so every example is correct.
-// WCAG 2.2.2: the rotation can be paused (button), it pauses on hover and keyboard focus, and it does not start at all
-// with prefers-reduced-motion. The visual cards are aria-hidden; a text description of the current example is read
-// instead.
+// It simply runs (the owner's choice: no dots, no pause button). It does not rotate with prefers-reduced-motion or in
+// a background tab. The visual cards are aria-hidden; a text description of the current example is read instead.
 
 type Opt = { t: string; ok?: boolean };
 type Body =
@@ -93,7 +92,7 @@ const EXAMPLES: Example[] = [
       { t: "E · ŷ(5) = 6.0" },
       { t: "F · β̂₁ = 0.25" },
     ],
-    cols: 3,
+    cols: 2,
     exam: { big: "12 d 4 h", pct: 13, note: "2 of 15 parts done" },
     desc: "Data Analysis for Economics, Part 7: the OLS slope 27 ÷ 36 = 0.75 and intercept 4.2 − 0.75 × 3.0 = 1.95, and a pick-two-of-six quiz.",
   },
@@ -222,8 +221,6 @@ function Row({ label, cells, total }: { label: string; cells: string[]; total: b
 
 export function LandingShowcase() {
   const [i, setI] = useState(0);
-  const [paused, setPaused] = useState(false); // the user's choice (button)
-  const [held, setHeld] = useState(false); // hover or keyboard focus
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
@@ -234,29 +231,17 @@ export function LandingShowcase() {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  const running = !paused && !held && !reduced;
   useEffect(() => {
-    if (!running) return;
+    if (reduced) return;
     const id = window.setInterval(() => {
       if (document.visibilityState === "visible") setI((n) => (n + 1) % EXAMPLES.length);
     }, PERIOD);
     return () => window.clearInterval(id);
-  }, [running]);
+  }, [reduced]);
 
   const ex = EXAMPLES[i];
   return (
-    <div
-      className="collage-wrap"
-      role="group"
-      aria-roledescription="carousel"
-      aria-label="Examples from the guides"
-      onMouseEnter={() => setHeld(true)}
-      onMouseLeave={() => setHeld(false)}
-      onFocus={() => setHeld(true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHeld(false);
-      }}
-    >
+    <div className="collage-wrap">
       <p className="sr-only">
         Example {i + 1} of {EXAMPLES.length}: {ex.desc}
       </p>
@@ -302,26 +287,6 @@ export function LandingShowcase() {
           </div>
           <div className="exam-note">{ex.exam.note} · progress saved</div>
         </div>
-      </div>
-      <div className="dots">
-        {EXAMPLES.map((e, n) => (
-          <button
-            key={e.tag}
-            type="button"
-            className={n === i ? "dot on" : "dot"}
-            aria-label={`Show example ${n + 1} of ${EXAMPLES.length}: ${e.cap}`}
-            aria-current={n === i ? "true" : undefined}
-            onClick={() => setI(n)}
-          />
-        ))}
-        <button
-          type="button"
-          className="pause"
-          aria-pressed={paused}
-          onClick={() => setPaused((p) => !p)}
-        >
-          {paused || reduced ? "Play" : "Pause"}
-        </button>
       </div>
     </div>
   );
