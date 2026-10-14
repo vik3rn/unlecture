@@ -76,6 +76,18 @@ async function GuideList() {
           </li>
         );
       })}
+      {/* Announced guide: disappears by itself once a Management Control guide is published. */}
+      {!guides.some((g) => g.slug.startsWith("management-control")) && (
+        <li>
+          <div className="card flex h-full flex-col border-dashed p-5" aria-label="Coming soon">
+            <span className="text-sm font-semibold text-warn">Coming Friday 16 October</span>
+            <span className="mt-1 text-lg font-semibold">Management Control: the midterm, step by step</span>
+            <span className="mt-1 text-sm text-muted">
+              Videos, worked cases, exam-style quizzes and four timed mock exams. It shows up here when it is published.
+            </span>
+          </div>
+        </li>
+      )}
     </ul>
   );
 }

@@ -55,6 +55,8 @@
 .lp .cta:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 14px; }
 .lp .cta .arr { transition: transform 0.2s; }
 .lp .cta:hover .arr { transform: translateX(3px); }
+.lp .soon { max-width: 34em; margin: 14px 0 0; padding: 10px 14px; border: 1.5px dashed var(--accent); border-radius: 12px;
+  background: var(--bg-2); font-size: 15px; color: var(--ink); }
 .lp .note { margin: 0; font-size: 14px; color: var(--ink-2); }
 /* like the guide's orange "Remember" box */
 .lp .why { max-width: 34em; margin: 22px 0 0; padding: 14px 18px; border-radius: 14px; background: var(--accent-2-soft);

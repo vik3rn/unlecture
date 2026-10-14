@@ -120,6 +120,11 @@ export default function Home() {
           <div className="intro">
             <p className="pill">For IE University students with an exam coming up</p>
             <h1 id="lp-title">Exam guides for IE students</h1>
+            {/* Remove when the Management Control guide is live. */}
+            <p className="soon">
+              <b>Coming Friday 16 October:</b> the <b>Management Control</b> midterm guide, with videos, worked cases,
+              exam-style quizzes and four timed mock exams.
+            </p>
             <p className="lede">
               Unlecture takes you through a course step by step before the exam: short videos that play on the page,
               the key points, exam-style quizzes and paper exercises.
@@ -221,7 +226,10 @@ export default function Home() {
               </span>
             </p>
           </article>
-          <p className="later">New guides show up in your account as they are published.</p>
+          <p className="later">
+            Next up: <b>Management Control</b> (midterm), coming Friday 16 October. New guides show up in your account
+            as they are published.
+          </p>
         </div>
       </section>
     </main>
