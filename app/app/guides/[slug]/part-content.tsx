@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LogoMark } from "@/app/components/logo";
 import { LETTERS, mmss, plain, questionKeys, type GuidePart, type GuideQuestion } from "@/lib/guides";
 import { useGuide } from "./progress";
@@ -97,6 +97,17 @@ export function PartContent({ part }: { part: GuidePart }) {
     setVideoSrc(null);
     setFileFailed(true);
   };
+
+  // Next 16 (cacheComponents) keeps recently visited pages in React <Activity> (display: none) instead of
+  // unmounting them, and hidden media keeps playing. Pause on hide; the position is kept because the DOM node stays.
+  useLayoutEffect(() => {
+    const v = video.current;
+    const f = frame.current;
+    return () => {
+      v?.pause();
+      f?.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "pauseVideo", args: [] }), YT_ORIGIN);
+    };
+  }, [videoSrc, src]);
 
   // YouTube player: highlight the current chapter, and mark the part done when the video ends.
   useEffect(() => {
