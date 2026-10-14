@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { SiteHeader } from "@/app/components/site-header";
 import "./globals.css";
 
@@ -36,9 +37,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <footer className="border-t border-line">
           <div className="mx-auto w-full max-w-5xl px-4 py-6 text-sm text-muted">
             Unlecture is a student project and is not an official IE University product. Privacy: we store your email
-            and your study progress to run the app, and the project owner can see them to improve the guides.
+            and your study progress to run the app, and the project owner can see them to improve the guides. Page
+            visits are counted anonymously with Vercel Web Analytics (no cookies).
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   );
