@@ -1,114 +1,155 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { getCurrentUser } from "@/lib/supabase/server";
 import "./landing.css";
 
 // Public landing page (grading contract in CLAUDE.md): what Unlecture does, who it is for, and ONE sign-up button
-// to /signup. The copy makes clear what the account is for: it keeps each student's progress in the guides.
-// A static server component with no client JS. Styles live in landing.css, scoped to .lp, in the look of the
-// original offline study guide (see app/app/guides/[slug]/guide.css).
-// The guide facts below come from the DAE midterm guide. Update them when the guides change. No fixed exam date:
-// students from several classes use the guides, and each one adds their own date in the course overview.
+// to /signup. Logged-in students get "Go to my guides" there instead. The first screen puts the courses up front:
+// a course list next to an example of what a guide looks like. Styles live in landing.css, scoped to .lp, and the
+// page fills wide screens (max 1440 px). Only the parts that depend on the login stream in (Suspense); the rest is
+// static. No fixed exam date: students from several classes use the guides and add their own date.
+// When the Management Control guide is live, give its card a "Live" badge and links like the DAE card.
 
-// Example progress for the preview card. The page labels it as an example; the part titles are the real ones.
-const previewParts = [
-  { n: 4, title: "Random variables and the rules for E and Var", state: "done" },
-  { n: 5, title: "Estimators: bias, efficiency and MSE", state: "done" },
-  { n: 6, title: "The simple regression model and its assumptions", state: "todo" },
-  { n: 7, title: "OLS: finding the line", state: "todo" },
-  { n: 8, title: "Residuals, sums of squares and R²", state: "todo" },
-] as const;
-
-const saves = [
-  {
-    icon: "✓",
-    tone: "ok",
-    title: "The parts you finish",
-    body: "Tick a part when you are done, or watch its video to the end and it ticks itself. You always see what is left.",
-  },
-  {
-    icon: "AB",
-    tone: "accent",
-    title: "Your quiz answers",
-    body: "The two options you picked on each question stay checked and explained when you come back.",
-  },
-  {
-    icon: "%",
-    tone: "accent",
-    title: "Your score",
-    body: "Your marks on every question you have checked, so you know which ones to go back to before the exam.",
-  },
-  {
-    icon: "⇄",
-    tone: "warm",
-    title: "Every device",
-    body: "Start on your laptop, carry on from your phone. Log in and your ticks, answers and score are all there.",
-  },
-];
-
-// The four steps as the study guide shows them.
 const steps = [
-  { name: "Watch", text: "Short videos on the page, with more on the way. Pause at every stop sign and solve on paper." },
-  { name: "Remember", text: "Read the key points under the video." },
-  { name: "Quiz", text: "Pick TWO of six, then check. Explanations for every option." },
-  { name: "Paper", text: "Solve the exercises by hand, then open the answer." },
+  { name: "Watch", text: "Short videos on the page. Pause at every stop sign and solve on paper.", warm: false },
+  { name: "Remember", text: "The key points of each part, in a few lines.", warm: false },
+  { name: "Quiz", text: "Questions in the real exam format, with an explanation for every option.", warm: false },
+  { name: "Paper", text: "Worked exercises to solve by hand, then open the answer.", warm: true },
 ];
 
-const examFacts = ["On paper · 70 min", "6 options · 2 correct · no penalty", "Formula sheet + basic calculator", "Units I and II · 35 %"];
+const keeps = [
+  { title: "Parts done", text: "Ticks itself when a video ends" },
+  { title: "Quiz answers", text: "Checked and explained" },
+  { title: "Your score", text: "Know what to revisit" },
+  { title: "Exam countdown", text: "From your own exam date" },
+];
 
-function LockIcon() {
+const tableRows: { label: string; cells: string[]; total?: boolean }[] = [
+  { label: "Sales", cells: ["4,000", "6,000", "5,000", "3,000", "18,000"] },
+  { label: "+ Ending", cells: ["1,200", "?", "?", "?", "?"] },
+  { label: "− Beginning", cells: ["800", "?", "?", "?", "?"] },
+  { label: "Production", cells: ["4,400", "?", "?", "?", "?"], total: true },
+];
+
+function SignupCta() {
   return (
-    <svg className="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-      <rect x="5" y="11" width="14" height="10" rx="2" />
-      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-    </svg>
+    <div className="cta-row">
+      <Link href="/signup" className="cta">
+        Sign up free to track your progress
+        <span aria-hidden="true" className="arr">
+          →
+        </span>
+      </Link>
+      <span className="cta-note">Just an email and a password.</span>
+    </div>
   );
 }
 
-function ProgressPreview() {
+async function HeroCta() {
+  const user = await getCurrentUser();
+  if (!user) return <SignupCta />;
   return (
-    <figure className="preview">
-      <div className="stack">
-        <div
-          className="dash"
-          role="img"
-          aria-label="Example of saved progress in a guide: 6 of 15 parts done, 40 of 108 questions answered, 66 of 80 marks, progress saved."
-        >
-          <div className="dash-head">
-            <span className="dash-brand">DAE Midterm · Study guide</span>
-            <span className="chip">Example</span>
-          </div>
-          <div className="dash-bar">
-            <i />
-          </div>
-          <div className="dash-stats">
-            <div>
-              <b>6/15</b>
-              <span>parts done</span>
-            </div>
-            <div>
-              <b>40/108</b>
-              <span>questions answered</span>
-            </div>
-            <div className="score">
-              <b>66/80</b>
-              <span>quiz marks</span>
-            </div>
-          </div>
-          <ul className="dash-parts">
-            {previewParts.map((p) => (
-              <li key={p.n} className={p.state}>
-                <span className="n">{p.n}</span>
-                <span className="t">{p.title}</span>
-                <span className="ck">{p.state === "done" ? "✓" : ""}</span>
-              </li>
+    <div className="cta-row">
+      <Link href="/app" className="cta">
+        Go to my guides
+        <span aria-hidden="true" className="arr">
+          →
+        </span>
+      </Link>
+      <span className="cta-note">You are logged in, and your progress is saved.</span>
+    </div>
+  );
+}
+
+function PreviewLink() {
+  return (
+    <Link href="/guides/dae-midterm" className="c-link">
+      Free preview: Part 0
+    </Link>
+  );
+}
+
+async function DaeAction() {
+  const user = await getCurrentUser();
+  if (!user) return <PreviewLink />;
+  return (
+    <Link href="/app/guides/dae-midterm" className="c-btn">
+      Open the guide <span aria-hidden="true">→</span>
+    </Link>
+  );
+}
+
+function Collage() {
+  return (
+    <figure
+      className="collage"
+      role="img"
+      aria-label="Example of a guide: a video part with a budget table and a stop sign to solve on paper, an exam-style quiz question and an exam countdown."
+    >
+      <div className="vid">
+        <div className="vid-top">
+          <span className="vid-tag">PART 9 · CHAPTER 4</span>
+          <span className="vid-stop">
+            <span className="stop">STOP</span>Pause &amp; solve on paper
+          </span>
+        </div>
+        <div className="vid-body">
+          <div className="vid-cap">Quarterly production budget</div>
+          <div className="tbl">
+            <span className="h" />
+            <span className="h r">Q1</span>
+            <span className="h r">Q2</span>
+            <span className="h r">Q3</span>
+            <span className="h r">Q4</span>
+            <span className="h r yr">Year</span>
+            {tableRows.map((row) => (
+              <TableRow key={row.label} {...row} />
             ))}
-          </ul>
-          <p className="dash-saved">
-            <span>✓</span> Progress saved to your account
-          </p>
+          </div>
+          <div className="vid-bar">
+            <i />
+            <span>6:51 / 10:58</span>
+          </div>
         </div>
       </div>
-      <figcaption>What your account keeps for each guide, on every device.</figcaption>
+      <div className="quiz">
+        <div className="quiz-top">
+          <span>Quiz · 4 options · 1 correct</span>
+          <span className="pts">+0.5</span>
+        </div>
+        <p>Beginning 1,000 · sales 5,000 · target ending 2,000. Production?</p>
+        <div className="opts">
+          <span>A · 4,000</span>
+          <span className="ok">B · 6,000 ✓</span>
+          <span>C · 7,000</span>
+          <span>D · None</span>
+        </div>
+      </div>
+      <div className="exam">
+        <div className="exam-cap">Your exam · example</div>
+        <div className="exam-big">5 d 3 h</div>
+        <div className="exam-bar">
+          <i />
+        </div>
+        <div className="exam-note">6 of 15 parts done · progress saved</div>
+      </div>
     </figure>
+  );
+}
+
+function TableRow({ label, cells, total }: { label: string; cells: string[]; total?: boolean }) {
+  return (
+    <>
+      <span className={total ? "l tot" : "l"}>{label}</span>
+      {cells.map((c, i) => (
+        <span
+          key={i}
+          className={["r", c === "?" ? "q" : "", i === 4 ? "yr" : "", total ? "tot" : ""].filter(Boolean).join(" ")}
+        >
+          {c}
+        </span>
+      ))}
+    </>
   );
 }
 
@@ -120,116 +161,87 @@ export default function Home() {
           <div className="intro">
             <p className="pill">For IE University students with an exam coming up</p>
             <h1 id="lp-title">Exam guides for IE students</h1>
-            {/* Remove when the Management Control guide is live. */}
-            <p className="soon">
-              <b>Coming Friday 16 October:</b> the <b>Management Control</b> midterm guide, with videos, worked cases,
-              exam-style quizzes and four timed mock exams.
-            </p>
             <p className="lede">
-              Unlecture takes you through a course step by step before the exam: short videos that play on the page,
-              the key points, exam-style quizzes and paper exercises.
+              Each guide takes you through a course step by step before the exam: short videos on the page, the key
+              points, exam-style quizzes and paper exercises.
             </p>
-            <div className="act">
-              <Link href="/signup" className="cta">
-                Sign up free to track your progress
-                <span aria-hidden="true" className="arr">
-                  →
-                </span>
-              </Link>
-              <p className="note">Just an email and a password.</p>
+
+            <div className="courses" id="courses">
+              <h2 className="eyebrow">Choose your course</h2>
+              <article className="course">
+                <div className="c-mark" aria-hidden="true">
+                  DAE
+                </div>
+                <div className="c-body">
+                  <div className="c-title">
+                    <h3>Data Analysis for Economics</h3>
+                    <span className="badge live">Live</span>
+                  </div>
+                  <p>Midterm · 15 parts · 108 exam-style questions · 54 paper exercises</p>
+                </div>
+                <div className="c-act">
+                  <Suspense fallback={<PreviewLink />}>
+                    <DaeAction />
+                  </Suspense>
+                </div>
+              </article>
+              <article className="course soon">
+                <div className="c-mark" aria-hidden="true">
+                  MC
+                </div>
+                <div className="c-body">
+                  <div className="c-title">
+                    <h3>Management Control</h3>
+                    <span className="badge warm">Coming Friday 16 October</span>
+                  </div>
+                  <p>Midterm · 17 parts · worked cases · 4 timed mock exams</p>
+                </div>
+                <p className="c-soon">It appears in your account when it is published.</p>
+              </article>
             </div>
-            <p className="why">
-              <b>Why an account?</b> It saves your quiz answers, the parts you mark done and your score, so you can pick
-              up where you left off on any device. The guides open as soon as you sign up.
-            </p>
-            <p className="login">
-              Already have an account? <Link href="/login">Log in</Link> to see your saved progress.
-            </p>
-            <p className="login">
-              Not ready to sign up? <Link href="/guides/dae-midterm">Try Part 0 without an account</Link>. Nothing is
-              saved there.
-            </p>
+
+            <Suspense fallback={<SignupCta />}>
+              <HeroCta />
+            </Suspense>
           </div>
-          <ProgressPreview />
+          <Collage />
         </div>
       </section>
 
-      <section className="band alt" aria-labelledby="saves-title">
+      <section className="band alt" id="how" aria-labelledby="how-title">
         <div className="wrap">
-          <p className="eyebrow">Why sign up</p>
-          <h2 id="saves-title">Your account keeps track of your progress</h2>
-          <p className="sub">
-            The guides are free. Your account is where your progress lives, so nothing is lost between study sessions.
-          </p>
-          <ul className="saves">
-            {saves.map((s) => (
-              <li key={s.title} className="save">
-                <span aria-hidden="true" className={`ico ${s.tone}`}>
-                  {s.icon}
+          <h2 id="how-title">How a guide works</h2>
+          <ol className="steps">
+            {steps.map((s, i) => (
+              <li key={s.name} className="step">
+                <span className={s.warm ? "num warm" : "num"} aria-hidden="true">
+                  {i + 1}
                 </span>
-                <h3>{s.title}</h3>
-                <p>{s.body}</p>
+                <h3>{s.name}</h3>
+                <p>{s.text}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="band dark" aria-labelledby="keeps-title">
+        <div className="wrap keeps-grid">
+          <div>
+            <h2 id="keeps-title">Your account keeps your progress</h2>
+            <p>
+              The parts you finish, every quiz answer, your score and your own exam date. Start on your laptop, carry
+              on from your phone.
+            </p>
+          </div>
+          <ul className="keeps">
+            {keeps.map((k) => (
+              <li key={k.title}>
+                <b>{k.title}</b>
+                <span>{k.text}</span>
               </li>
             ))}
           </ul>
-          <p className="private">
-            <b>Private to you.</b> Other students cannot see your progress, and you can reset a guide at any time.
-          </p>
-        </div>
-      </section>
-
-      <section className="band" aria-labelledby="how-title">
-        <div className="wrap">
-          <p className="eyebrow">Available now</p>
-          <h2 id="how-title">How a guide works</h2>
-          <p className="sub">
-            Each guide splits a course into short parts, and each part has up to four steps. The first guide is ready.
-          </p>
-          <article className="guide" aria-labelledby="guide-title">
-            <div className="g-top">
-              <span className="g-brand">DAE Midterm · Study guide</span>
-              <span className="g-lock">
-                <LockIcon />
-                Free with an account
-              </span>
-            </div>
-            <div className="g-body">
-              <h3 id="guide-title">Data Analysis for Economics: the midterm, step by step</h3>
-              <p>Units I and II in 15 parts, from data and samples to multiple regression, ending with a full mock exam.</p>
-              <p>100+ exam-style questions and 50+ paper exercises in one place. Work from top to bottom.</p>
-              <ol className="steps" tabIndex={0} aria-label="How a guide works">
-                {steps.map((s, i) => (
-                  <li key={s.name} className="step">
-                    <b>
-                      <span aria-hidden="true">{i + 1} · </span>
-                      {s.name}
-                    </b>
-                    {s.text}
-                  </li>
-                ))}
-              </ol>
-              <ul className="facts" aria-label="About the exam">
-                <li className="chip hot">Add your own exam date for a countdown</li>
-                {examFacts.map((f) => (
-                  <li key={f} className="chip">
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <p className="g-gate">
-              <LockIcon />
-              <span>
-                <b>Opens after you sign up or log in.</b> Your account keeps every quiz answer, every part you mark done
-                and your score. Part 0 is open as a <Link href="/guides/dae-midterm">free preview</Link> without an
-                account, but nothing is saved there.
-              </span>
-            </p>
-          </article>
-          <p className="later">
-            Next up: <b>Management Control</b> (midterm), coming Friday 16 October. New guides show up in your account
-            as they are published.
-          </p>
         </div>
       </section>
     </main>
