@@ -229,6 +229,17 @@
 .dg .ex summary::before { content: "Show answer"; }
 .dg .ex details[open] summary::before { content: "Hide answer"; }
 .dg .ex .ans { margin-top: 10px; padding: 12px 14px; border-radius: 10px; background: var(--ok-soft); }
+/* tidy exercise layout from the content: context, given values as chips, one line per sub-question */
+.dg .ex .w-note { display: inline-block; margin: 0 0 6px; padding: 1px 8px; border-radius: 99px; background: var(--tint); color: var(--ink-3);
+  font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.dg .ex .w-ctx { display: block; margin: 2px 0 8px; }
+.dg .ex .w-given { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 4px 0 12px; }
+.dg .ex .w-v { display: inline-block; padding: 3px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--tint); font-variant-numeric: tabular-nums; }
+.dg .ex .w-subs { display: grid; gap: 8px; margin-top: 4px; }
+.dg .ex .w-sub { display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: baseline; }
+.dg .ex .w-l { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+  font-size: 13px; font-weight: 750; }
+.dg .ex .ans .w-l { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
 
 /* finish and pager */
 .dg .finish { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--line); }
