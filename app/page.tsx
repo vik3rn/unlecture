@@ -5,8 +5,8 @@ import "./landing.css";
 // to /signup. The copy makes clear what the account is for: it keeps each student's progress in the guides.
 // A static server component with no client JS. Styles live in landing.css, scoped to .lp, in the look of the
 // original offline study guide (see app/app/guides/[slug]/guide.css).
-// The guide facts below come from the DAE midterm guide. Update them when the guides change, and drop the exam
-// chip after Fri 16 Oct 2026.
+// The guide facts below come from the DAE midterm guide. Update them when the guides change. No fixed exam date:
+// students from several classes use the guides, and each one adds their own date in the course overview.
 
 // Example progress for the preview card. The page labels it as an example; the part titles are the real ones.
 const previewParts = [
@@ -204,9 +204,7 @@ export default function Home() {
                 ))}
               </ol>
               <ul className="facts" aria-label="About the exam">
-                <li className="chip hot">
-                  Exam <time dateTime="2026-10-16T14:30:00+02:00">Fri 16 Oct · 14:30</time>
-                </li>
+                <li className="chip hot">Add your own exam date for a countdown</li>
                 {examFacts.map((f) => (
                   <li key={f} className="chip">
                     {f}
