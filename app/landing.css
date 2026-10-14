@@ -143,8 +143,13 @@
 @media (max-width: 720px) {
   .lp .collage { height: auto; display: flex; flex-direction: column; gap: 14px; }
   .lp .vid, .lp .quiz, .lp .exam { position: static; width: auto; }
-  .lp .tbl { font-size: 12px; }
-  .lp .tbl span { padding: 7px 5px; }
+  .lp .vid-top { flex-wrap: wrap; padding: 12px 14px; }
+  .lp .vid-tag, .lp .vid-stop { white-space: nowrap; }
+  .lp .vid-body { padding: 16px 14px 18px; }
+  /* no room for the Year column on a phone: four quarters fit without wrapping */
+  .lp .tbl { grid-template-columns: auto repeat(4, minmax(0, 1fr)); font-size: 12px; }
+  .lp .tbl span { padding: 7px 5px; white-space: nowrap; }
+  .lp .tbl .yr { display: none; }
   .lp .opts { grid-template-columns: minmax(0, 1fr); }
   .lp .keeps { grid-template-columns: minmax(0, 1fr); }
   .lp .c-soon { max-width: none; }
