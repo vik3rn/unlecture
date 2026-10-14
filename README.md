@@ -34,7 +34,8 @@ The free preview reads guides on the server with `SUPABASE_SECRET_KEY` (Supabase
 | `/app`    | Exam guides and your study list (logged-in users only) |
 | `/guides/[slug]` and `/guides/[slug]/[part]` | Free preview without an account: overview with locked parts, and the open part (nothing is saved) |
 | `/app/guides/[slug]` | Course overview: all parts with your status and where to continue |
-| `/app/guides/[slug]/[part]` | One part: video, key points, quiz, paper exercises, previous/next |
+| `/app/guides/[slug]/[part]` | One part: video, key points, quiz, open questions, paper exercises, previous/next |
+| `/app/guides/[slug]/mock/[id]` | A timed mock exam: rules, countdown, autosave, submit, result with review and topic breakdown |
 
 ## Project layout
 
@@ -44,5 +45,7 @@ The free preview reads guides on the server with `SUPABASE_SECRET_KEY` (Supabase
 - `app/actions/auth.ts`: sign up, log in, log out (server actions).
 - `app/app/`: the guide list and the study list (`study_packs` table).
 - `app/app/guides/`: the guide page and the server action that saves progress.
-- `lib/guides.ts`: the shape of a guide and a strict parser that only lets a short list of HTML tags through.
+- `lib/guides.ts`: the shape of a guide and a strict parser that only lets a short list of HTML tags through. A guide may set its exam `format` (options, correct answers, points, penalty, blank allowed, label), open questions per part (`opens`) and timed `mocks`; without `format` it keeps the DAE rules (pick two of six, no penalty).
+- `lib/scoring.ts`: exam scoring for single-answer quizzes and mock exams (penalties, blanks, self-graded open answers, topics).
+- `lib/progress.ts`: the shape of a student's saved progress and the strict check every save goes through (size limits included).
 - `supabase/migrations/`: SQL for tables, grants and RLS policies.

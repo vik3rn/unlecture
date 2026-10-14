@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { isAdmin } from "@/lib/admin";
 import { dayIn, dayStart, formatDuration, OTHER_PART, summarizeTime, type TimeRow, type UserTime } from "@/lib/guide-time";
 import { parseGuideContent, plain, questionKeys } from "@/lib/guides";
+import type { MockState } from "@/lib/progress";
+import { bestScore, fmtPoints } from "@/lib/scoring";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -11,7 +13,13 @@ import { getCurrentUser } from "@/lib/supabase/server";
 // it is reachable only for ADMIN_EMAILS, is never indexed, and reads with the server-only secret key.
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 
-type Progress = { done?: Record<string, boolean>; quiz?: Record<string, string[]>; exam?: { date: string } };
+type Progress = {
+  done?: Record<string, boolean>;
+  quiz?: Record<string, string[]>;
+  pick?: Record<string, string>;
+  exam?: { date: string };
+  mocks?: Record<string, MockState>;
+};
 // updated_at is null for a student who has study time in a guide but has not saved any progress there yet.
 type Row = { user_id: string; guide_id: string; progress: Progress; updated_at: string | null };
 
@@ -145,10 +153,18 @@ async function Dashboard() {
         };
         const parts = g.content.parts;
         const items = parts.flatMap((p) => questionKeys(p).map(({ q, key }) => ({ p, q, key })));
+        // One correct option: answers are single letters in progress.pick ("" = blank). Otherwise letter lists in quiz.
+        const single = g.content.format.correct === 1;
+        const answersOf = (pr: Progress) =>
+          single
+            ? Object.fromEntries(Object.entries(pr.pick ?? {}).map(([k, v]) => [k, v ? [v] : []]))
+            : (pr.quiz ?? {});
+        const isFull = (a: unknown, correct: string[]) =>
+          Array.isArray(a) && a.length === correct.length && a.every((x) => correct.includes(x));
         const perQuestion = items
           .map(({ p, q, key }) => {
-            const answers = gr.map((r) => r.progress.quiz?.[key]).filter((a): a is string[] => Array.isArray(a));
-            const full = answers.filter((a) => a.every((x) => q.correct.includes(x)) && a.length === q.correct.length).length;
+            const answers = gr.map((r) => answersOf(r.progress)[key]).filter((a): a is string[] => Array.isArray(a));
+            const full = answers.filter((a) => isFull(a, q.correct)).length;
             return { part: p.n, key, stem: plain(q.stem).slice(0, 110), n: answers.length, full };
           })
           .filter((x) => x.n > 0)
@@ -206,7 +222,7 @@ async function Dashboard() {
               </ul>
               {timeOn && gt?.parts.has(OTHER_PART) && (
                 <p className="mt-2 text-sm text-muted">
-                  Course overview and other pages: {partTime(OTHER_PART)} per student on average.
+                  Course overview, mock exams and other pages: {partTime(OTHER_PART)} per student on average.
                 </p>
               )}
             </div>
@@ -244,6 +260,50 @@ async function Dashboard() {
               </div>
             </div>
 
+            {g.content.mocks.length > 0 && (
+              <div>
+                <h3 className="font-medium">Mock exams</h3>
+                <div className="mt-2 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-line text-left text-muted">
+                        <th className="py-2 pr-3 font-medium">Mock</th>
+                        <th className="py-2 pr-3 text-right font-medium">Students</th>
+                        <th className="py-2 pr-3 text-right font-medium">Submitted attempts</th>
+                        <th className="py-2 pr-3 text-right font-medium">Average best</th>
+                        <th className="py-2 text-right font-medium">Average last</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {g.content.mocks.map((m) => {
+                        const states = gr
+                          .map((r) => r.progress.mocks?.[m.id])
+                          .filter((x): x is MockState => !!x && Array.isArray(x.history));
+                        const scored = states.filter((x) => x.history.length > 0);
+                        const avg = (pick: (x: MockState) => { score: number; max: number } | null | undefined) => {
+                          const v = scored.map(pick).filter((x): x is { score: number; max: number } => !!x && x.max > 0);
+                          return v.length ? `${Math.round((100 * v.reduce((a, x) => a + x.score / x.max, 0)) / v.length)} %` : "–";
+                        };
+                        return (
+                          <tr key={m.id} className="border-b border-line">
+                            <td className="py-2 pr-3">
+                              {plain(m.title)} <span className="text-muted">({fmtPoints(m.size.points)} points)</span>
+                            </td>
+                            <td className="py-2 pr-3 text-right tabular-nums">{states.length}</td>
+                            <td className="py-2 pr-3 text-right tabular-nums">
+                              {scored.reduce((a, x) => a + x.history.length, 0)}
+                            </td>
+                            <td className="py-2 pr-3 text-right tabular-nums">{avg((x) => bestScore(x.history))}</td>
+                            <td className="py-2 text-right tabular-nums">{avg((x) => x.history.at(-1))}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             <div>
               <h3 className="font-medium">Students</h3>
               <div className="mt-2 overflow-x-auto">
@@ -270,12 +330,9 @@ async function Dashboard() {
                       .slice()
                       .sort((a, b) => lastSeen(b, studied(b.user_id)) - lastSeen(a, studied(a.user_id)))
                       .map((r) => {
-                        const quiz = r.progress.quiz ?? {};
+                        const quiz = answersOf(r.progress);
                         const answered = Object.keys(quiz).length;
-                        const full = items.filter(({ q, key }) => {
-                          const a = quiz[key];
-                          return Array.isArray(a) && a.length === q.correct.length && a.every((x) => q.correct.includes(x));
-                        }).length;
+                        const full = items.filter(({ q, key }) => isFull(quiz[key], q.correct)).length;
                         return (
                           <tr key={r.user_id} className="border-b border-line">
                             <td className="py-2 pr-3 break-all">{emailOf.get(r.user_id) ?? r.user_id}</td>

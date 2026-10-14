@@ -1,18 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import type { PartSummary } from "@/lib/guides";
+import type { GuideFormat, MockSummary, PartSummary } from "@/lib/guides";
 import { plain } from "@/lib/guides";
+import { fmtPoints, pickOfText, tallyPicks } from "@/lib/scoring";
 import { ExamDate } from "./exam-date";
+import { MockList } from "./mock-list";
 import { EMPTY_PROGRESS, saveLabel, useGuide } from "./progress";
 import { Html } from "./ui";
 
-const STEPS = [
-  ["Watch", "Short video parts that play right here. Pause at every stop sign and solve on paper."],
-  ["Remember", "The key points of each part, in a few lines."],
-  ["Quiz", "Exam-style questions: pick two of six, then check. Every option is explained."],
-  ["Paper", "Worked exercises to solve by hand, then open the answer."],
-] as const;
+// "pick two of six" for the DAE guide; a guide with its own format shows its label instead.
+const steps = (f: GuideFormat) =>
+  [
+    ["Watch", "Short video parts that play right here. Pause at every stop sign and solve on paper."],
+    ["Remember", "The key points of each part, in a few lines."],
+    [
+      "Quiz",
+      `Exam-style questions${f.label ? ` (${f.label})` : `: ${pickOfText(f)}`}, then check. Every option is explained.`,
+    ],
+    ["Paper", "Worked exercises to solve by hand, then open the answer."],
+  ] as const;
 
 export function CourseOverview({
   title,
@@ -22,6 +29,8 @@ export function CourseOverview({
   examDay,
   credit,
   parts,
+  format,
+  mocks,
 }: {
   title: string;
   summary: string;
@@ -30,8 +39,14 @@ export function CourseOverview({
   examDay: string[];
   credit: string;
   parts: PartSummary[];
+  format: GuideFormat;
+  mocks: MockSummary[];
 }) {
   const { base, guest, progress, update, saveState } = useGuide();
+  // One correct option: answers in progress.pick, scored in exam points. Otherwise pick-n answers in progress.quiz,
+  // one mark per right pick (DAE).
+  const single = format.correct === 1;
+  const isAnswered = (key: string) => (single ? progress.pick?.[key] !== undefined : !!progress.quiz[key]);
 
   let total = 0;
   let answered = 0;
@@ -40,12 +55,16 @@ export function CourseOverview({
     for (const { key, correct } of p.qs) {
       total++;
       const picks = progress.quiz[key];
-      if (picks) {
+      if (!single && picks) {
         answered++;
         marks += picks.filter((x) => correct.includes(x)).length;
       }
     }
   }
+  const tally = single ? tallyPicks(format, parts.flatMap((p) => p.qs), progress.pick) : null;
+  if (tally) answered = tally.answered;
+  const opens = parts.reduce((n, p) => n + p.opens.length, 0);
+  const written = parts.reduce((n, p) => n + p.opens.filter((k) => progress.open?.[k]).length, 0);
   const done = parts.filter((p) => progress.done[p.n]).length;
   const pct = parts.length ? (100 * done) / parts.length : 0;
   const nextPart = parts.find((p) => !p.locked && !progress.done[p.n]) ?? parts.find((p) => !p.locked);
@@ -57,7 +76,11 @@ export function CourseOverview({
   }
 
   const resetAll = () => {
-    if (window.confirm("Reset all quiz answers and done marks in this guide?")) update(() => EMPTY_PROGRESS);
+    const what =
+      opens > 0 || mocks.length > 0
+        ? "Reset all quiz answers, open answers, mock exams and done marks in this guide?"
+        : "Reset all quiz answers and done marks in this guide?";
+    if (window.confirm(what)) update(() => EMPTY_PROGRESS);
   };
 
   return (
@@ -97,7 +120,9 @@ export function CourseOverview({
                 {done} of {parts.length} parts done
               </p>
               <p className="pc-sub">
-                {answered}/{total} questions answered · {marks}/{answered * 2} marks
+                {answered}/{total} questions answered ·{" "}
+                {tally ? `${fmtPoints(tally.points)}/${fmtPoints(tally.max)} points` : `${marks}/${answered * format.correct} marks`}
+                {opens > 0 && ` · ${written}/${opens} open answers written`}
                 {!guest && saveLabel[saveState] && <span className="pc-save"> · {saveLabel[saveState]}</span>}
               </p>
             </div>
@@ -113,7 +138,7 @@ export function CourseOverview({
         </section>
 
         <ol className="how" tabIndex={0} aria-label="How a guide works">
-          {STEPS.map(([h, t], i) => (
+          {steps(format).map(([h, t], i) => (
             <li key={h}>
               <span className="num" aria-hidden="true">
                 {i + 1}
@@ -132,11 +157,12 @@ export function CourseOverview({
             <ul className="parts">
               {u.parts.map((p) => {
                 const isDone = !!progress.done[p.n];
-                const answeredHere = p.qs.filter((q) => progress.quiz[q.key]).length;
+                const answeredHere = p.qs.filter((q) => isAnswered(q.key)).length;
                 const meta = [
                   p.dur,
                   p.chapters > 0 && `${p.chapters} chapters`,
-                  p.qs.length > 0 && `${p.qs.length} questions`,
+                  p.qs.length > 0 && `${p.qs.length} ${p.qs.length === 1 ? "question" : "questions"}`,
+                  p.opens.length > 0 && `${p.opens.length} open`,
                 ]
                   .filter(Boolean)
                   .join(" · ");
@@ -183,6 +209,8 @@ export function CourseOverview({
             </ul>
           </section>
         ))}
+
+        {mocks.length > 0 && <MockList mocks={mocks} format={format} />}
 
         {(notOnSheet.length > 0 || examDay.length > 0) && (
           <div className="extras">

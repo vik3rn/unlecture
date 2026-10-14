@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { saveGuideProgress, type GuideProgress } from "../actions";
 
 export type Update = (fn: (p: GuideProgress) => GuideProgress) => void;
-export type SaveState = "idle" | "saving" | "saved" | "error";
+export type SaveState = "idle" | "saving" | "saved" | "error" | "full";
 
 export const EMPTY_PROGRESS: GuideProgress = { done: {}, quiz: {} };
 
@@ -45,8 +45,8 @@ export function ProgressProvider({
 
   const save = useCallback(() => {
     chain.current = chain.current.then(async () => {
-      const { error } = await saveGuideProgress(guideId, latest.current).catch(() => ({ error: "offline" }));
-      if (!timer.current) setSaveState(error ? "error" : "saved");
+      const r = await saveGuideProgress(guideId, latest.current).catch(() => ({ error: "offline", tooLarge: false }));
+      if (!timer.current) setSaveState(r.tooLarge ? "full" : r.error ? "error" : "saved");
     });
   }, [guideId]);
 
@@ -103,4 +103,7 @@ export const saveLabel: Record<SaveState, string> = {
   saving: "Saving…",
   saved: "Saved",
   error: "Not saved. Check your connection.",
+  full: "Not saved: your answers are too long. Shorten an open answer.",
 };
+
+export const saveFailed = (s: SaveState) => s === "error" || s === "full";

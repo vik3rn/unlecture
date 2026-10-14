@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { plain, type GuidePart } from "@/lib/guides";
+import { plain, type GuideFormat, type GuidePart } from "@/lib/guides";
 import { PartContent } from "./part-content";
-import { saveLabel, useGuide } from "./progress";
+import { saveFailed, saveLabel, useGuide } from "./progress";
 import { Html } from "./ui";
 
 export type PartLink = { n: number; title: string; locked: boolean } | null;
@@ -15,6 +15,7 @@ export function PartView({
   total,
   last,
   brand,
+  format,
 }: {
   part: GuidePart;
   prev: PartLink;
@@ -22,6 +23,7 @@ export function PartView({
   total: number; // number of parts
   last: number; // number of the last part (parts may start at 0)
   brand: string;
+  format: GuideFormat;
 }) {
   const { base, guest, progress, update, saveState } = useGuide();
   const done = !!progress.done[part.n];
@@ -81,7 +83,7 @@ export function PartView({
         >
           <i style={{ width: `${(100 * doneCount) / Math.max(1, total)}%` }} />
         </span>
-        <span className={`save${saveState === "error" ? " err" : ""}`} aria-live="polite">
+        <span className={`save${saveFailed(saveState) ? " err" : ""}`} aria-live="polite">
           {guest ? "" : saveLabel[saveState]}
         </span>
       </header>
@@ -102,11 +104,12 @@ export function PartView({
         <p className="meta">
           {part.dur}
           {part.chapters.length > 1 && ` · ${part.chapters.length - 1} chapters`}
-          {questions > 0 && ` · ${questions} questions`}
+          {questions > 0 && ` · ${questions} ${questions === 1 ? "question" : "questions"}`}
           {part.works.length > 0 && ` · ${part.works.length} exercises`}
+          {part.opens.length > 0 && ` · ${part.opens.length} open ${part.opens.length === 1 ? "question" : "questions"}`}
         </p>
 
-        <PartContent part={part} />
+        <PartContent part={part} format={format} />
 
         <div className="finish">
           <button type="button" className={`done-btn${done ? " on" : ""}`} aria-pressed={done} onClick={toggleDone}>

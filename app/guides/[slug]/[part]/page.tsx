@@ -28,6 +28,7 @@ async function Part({ slug, n }: { slug: string; n: string }) {
       total={parts.length}
       last={parts.at(-1)?.n ?? 0}
       brand={plain(guide.content.brand) || plain(guide.title).split(":")[0]}
+      format={guide.content.format}
     />
   );
 }

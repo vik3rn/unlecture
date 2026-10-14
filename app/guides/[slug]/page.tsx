@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CourseOverview } from "@/app/app/guides/[slug]/course-overview";
-import { summarizeParts } from "@/lib/guides";
+import { summarizeMocks, summarizeParts } from "@/lib/guides";
 import { getPreview } from "@/lib/preview";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -33,6 +33,8 @@ async function Preview({ slug }: { slug: string }) {
       examDay={c.examDay}
       credit={c.credit}
       parts={summarizeParts(c)}
+      format={c.format}
+      mocks={summarizeMocks(c)}
     />
   );
 }

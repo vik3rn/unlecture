@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LogoMark } from "@/app/components/logo";
-import { LETTERS, mmss, plain, questionKeys, type GuidePart, type GuideQuestion } from "@/lib/guides";
+import { LETTERS, mmss, openKeys, plain, questionKeys, type GuideFormat, type GuidePart, type GuideQuestion } from "@/lib/guides";
+import { fmtPoints, quizRule, round3, scoringRule, tallyPicks } from "@/lib/scoring";
+import { OpenPractice, SingleQuiz } from "./answers";
 import { useGuide } from "./progress";
 import { Html } from "./ui";
 
@@ -10,7 +12,7 @@ import { Html } from "./ui";
 // as a YouTube embed. Nothing is loaded from YouTube until the student presses play.
 const YT_ORIGIN = "https://www.youtube-nocookie.com";
 
-export function PartContent({ part }: { part: GuidePart }) {
+export function PartContent({ part, format }: { part: GuidePart; format: GuideFormat }) {
   const { slug, progress, update } = useGuide();
   const frame = useRef<HTMLIFrameElement>(null);
   const video = useRef<HTMLVideoElement>(null);
@@ -136,6 +138,22 @@ export function PartContent({ part }: { part: GuidePart }) {
       i < nDrills ? (mock ? `Mock exam · ${mock[1]}` : `From the video · ${i + 1}`) : `New question · ${i - nDrills + 1}`;
     return { q, key, label };
   });
+  // One correct option: single-answer questions scored under the exam's rules (progress.pick). Otherwise the
+  // pick-n-of-m quiz (progress.quiz), as in the DAE guide.
+  const single = format.correct === 1;
+  const tally = single ? tallyPicks(format, qs.map(({ q, key }) => ({ key, correct: q.correct })), progress.pick) : null;
+  const opens = openKeys(part);
+  let graded = 0;
+  let openPoints = 0;
+  let openMax = 0;
+  for (const { q, key } of opens) {
+    const g = progress.grade?.[key];
+    openMax += q.points;
+    if (g !== undefined) {
+      graded++;
+      openPoints += g * q.points;
+    }
+  }
 
   return (
     <>
@@ -233,23 +251,93 @@ export function PartContent({ part }: { part: GuidePart }) {
       {qs.length > 0 && (
         <section className="sec" aria-labelledby={`quiz-${part.n}`}>
           <h2 id={`quiz-${part.n}`}>
-            Quiz <span className="cnt">{qs.length} questions · pick two</span>
+            Quiz <span className="cnt">{qs.length} questions · {quizRule(format)}</span>
           </h2>
-          {qs.map(({ q, key, label }) => (
-            <Quiz
+          {tally && (
+            <p className="tally">
+              {tally.answered > 0 ? (
+                <>
+                  Your score: <b>{fmtPoints(tally.points)}</b> of {fmtPoints(tally.max)} points · {tally.right} right ·{" "}
+                  {tally.wrong} wrong · {tally.blank} blank
+                </>
+              ) : (
+                <>Scoring as on the exam</>
+              )}
+              <span className="rule"> ({scoringRule(format)})</span>
+            </p>
+          )}
+          {qs.map(({ q, key, label }) =>
+            single ? (
+              <SingleQuiz
+                key={key}
+                id={`q-${key}`}
+                q={q}
+                label={label}
+                format={format}
+                answer={progress.pick?.[key] ?? null}
+                onCheck={(a) => update((p) => ({ ...p, pick: { ...p.pick, [key]: a } }))}
+                onReset={() =>
+                  update((p) => {
+                    const pick = { ...p.pick };
+                    delete pick[key];
+                    return { ...p, pick };
+                  })
+                }
+                onWatch={q.at !== null && hasVideo ? () => seek(q.at as number) : null}
+              />
+            ) : (
+              <Quiz
+                key={key}
+                q={q}
+                n={format.correct}
+                label={label}
+                picks={progress.quiz[key] ?? null}
+                onCheck={(picks) => update((p) => ({ ...p, quiz: { ...p.quiz, [key]: picks } }))}
+                onReset={() =>
+                  update((p) => {
+                    const quiz = { ...p.quiz };
+                    delete quiz[key];
+                    return { ...p, quiz };
+                  })
+                }
+                onWatch={q.at !== null && hasVideo ? () => seek(q.at as number) : null}
+              />
+            ),
+          )}
+        </section>
+      )}
+
+      {opens.length > 0 && (
+        <section className="sec" aria-labelledby={`open-${part.n}`}>
+          <h2 id={`open-${part.n}`}>
+            Open questions{" "}
+            <span className="cnt">
+              {opens.length} {opens.length === 1 ? "question" : "questions"} · write, then compare with the model answer
+            </span>
+          </h2>
+          {graded > 0 && (
+            <p className="tally">
+              Self-graded: <b>{fmtPoints(round3(openPoints))}</b> of {fmtPoints(round3(openMax))} points · {graded}/
+              {opens.length} graded
+            </p>
+          )}
+          {opens.map(({ q, key }, i) => (
+            <OpenPractice
               key={key}
+              id={`o-${key}`}
               q={q}
-              label={label}
-              picks={progress.quiz[key] ?? null}
-              onCheck={(picks) => update((p) => ({ ...p, quiz: { ...p.quiz, [key]: picks } }))}
-              onReset={() =>
+              label={`Open question · ${i + 1}`}
+              value={progress.open?.[key] ?? ""}
+              grade={progress.grade?.[key]}
+              onText={(t) =>
                 update((p) => {
-                  const quiz = { ...p.quiz };
-                  delete quiz[key];
-                  return { ...p, quiz };
+                  const open = { ...p.open };
+                  if (t.trim()) open[key] = t;
+                  else delete open[key];
+                  return { ...p, open };
                 })
               }
-              onWatch={q.at !== null && hasVideo ? () => seek(q.at as number) : null}
+              onGrade={(g) => update((p) => ({ ...p, grade: { ...p.grade, [key]: g } }))}
             />
           ))}
         </section>
@@ -284,8 +372,10 @@ export function PartContent({ part }: { part: GuidePart }) {
   );
 }
 
+// Pick n of the options (DAE: two of six), check, and see which were right.
 function Quiz({
   q,
+  n,
   label,
   picks,
   onCheck,
@@ -293,6 +383,7 @@ function Quiz({
   onWatch,
 }: {
   q: GuideQuestion;
+  n: number; // options to pick
   label: string;
   picks: string[] | null;
   onCheck: (picks: string[]) => void;
@@ -306,7 +397,7 @@ function Quiz({
 
   const toggle = (letter: string) => {
     if (checked) return;
-    setSel((s) => (s.includes(letter) ? s.filter((x) => x !== letter) : s.length < 2 ? [...s, letter] : s));
+    setSel((s) => (s.includes(letter) ? s.filter((x) => x !== letter) : s.length < n ? [...s, letter] : s));
   };
 
   return (
@@ -345,7 +436,7 @@ function Quiz({
           <button
             type="button"
             className="btn"
-            disabled={sel.length !== 2}
+            disabled={sel.length !== n}
             onClick={() => {
               onCheck([...sel].sort());
               setSel([]);
@@ -354,8 +445,8 @@ function Quiz({
             Check
           </button>
         )}
-        <span role="status" className={`score s${right}`}>
-          {checked && (right === 2 ? "2 / 2 correct" : `${right} / 2 · correct: ${q.correct.join(" and ")}`)}
+        <span role="status" className={`score s${right === n ? 2 : right > 0 ? 1 : 0}`}>
+          {checked && (right === n ? `${n} / ${n} correct` : `${right} / ${n} · correct: ${q.correct.join(" and ")}`)}
         </span>
         {onWatch && (
           <button type="button" className="watch" onClick={onWatch}>

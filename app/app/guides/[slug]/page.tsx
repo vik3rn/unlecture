@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { parseGuideContent, summarizeParts } from "@/lib/guides";
+import { parseGuideContent, summarizeMocks, summarizeParts } from "@/lib/guides";
 import { createClient } from "@/lib/supabase/server";
 import { CourseOverview } from "./course-overview";
 
@@ -22,6 +22,8 @@ async function Overview({ slug }: { slug: string }) {
       examDay={c.examDay}
       credit={c.credit}
       parts={summarizeParts(c)}
+      format={c.format}
+      mocks={summarizeMocks(c)}
     />
   );
 }
