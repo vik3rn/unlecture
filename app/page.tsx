@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { LandingShowcase } from "@/app/components/landing-showcase";
 import { getCurrentUser } from "@/lib/supabase/server";
 import "./landing.css";
 
 // Public landing page (grading contract in CLAUDE.md): what Unlecture does, who it is for, and ONE sign-up button
 // to /signup. Logged-in students get "Go to my guides" there instead. The first screen puts the courses up front:
-// a course list next to an example of what a guide looks like. Styles live in landing.css, scoped to .lp, and the
-// page fills wide screens (max 1440 px). Only the parts that depend on the login stream in (Suspense); the rest is
-// static. No fixed exam date: students from several classes use the guides and add their own date.
-// When the Management Control guide is live, give its card a "Live" badge and links like the DAE card.
+// a course list next to examples from the guides that flip every 5 seconds (app/components/landing-showcase.tsx).
+// Styles live in landing.css, scoped to .lp, and the page fills wide screens (max 1440 px). Only the parts that
+// depend on the login stream in (Suspense); the rest is static. No fixed exam date: students from several classes
+// use the guides and add their own date. When the Management Control guide is live, give its card a "Live" badge
+// and links like the DAE card.
 
 const steps = [
   { name: "Watch", text: "Short videos on the page. Pause at every stop sign and solve on paper.", warm: false },
@@ -22,13 +24,6 @@ const keeps = [
   { title: "Quiz answers", text: "Checked and explained" },
   { title: "Your score", text: "Know what to revisit" },
   { title: "Exam countdown", text: "From your own exam date" },
-];
-
-const tableRows: { label: string; cells: string[]; total?: boolean }[] = [
-  { label: "Sales", cells: ["4,000", "6,000", "5,000", "3,000", "18,000"] },
-  { label: "+ Ending", cells: ["1,200", "?", "?", "?", "?"] },
-  { label: "− Beginning", cells: ["800", "?", "?", "?", "?"] },
-  { label: "Production", cells: ["4,400", "?", "?", "?", "?"], total: true },
 ];
 
 function SignupCta() {
@@ -76,80 +71,6 @@ async function DaeAction() {
     <Link href="/app/guides/dae-midterm" className="c-btn">
       Open the guide <span aria-hidden="true">→</span>
     </Link>
-  );
-}
-
-function Collage() {
-  return (
-    <figure
-      className="collage"
-      role="img"
-      aria-label="Example of a guide: a video part with a budget table and a stop sign to solve on paper, an exam-style quiz question and an exam countdown."
-    >
-      <div className="vid">
-        <div className="vid-top">
-          <span className="vid-tag">PART 9 · CHAPTER 4</span>
-          <span className="vid-stop">
-            <span className="stop">STOP</span>Pause &amp; solve on paper
-          </span>
-        </div>
-        <div className="vid-body">
-          <div className="vid-cap">Quarterly production budget</div>
-          <div className="tbl">
-            <span className="h" />
-            <span className="h r">Q1</span>
-            <span className="h r">Q2</span>
-            <span className="h r">Q3</span>
-            <span className="h r">Q4</span>
-            <span className="h r yr">Year</span>
-            {tableRows.map((row) => (
-              <TableRow key={row.label} {...row} />
-            ))}
-          </div>
-          <div className="vid-bar">
-            <i />
-            <span>6:51 / 10:58</span>
-          </div>
-        </div>
-      </div>
-      <div className="quiz">
-        <div className="quiz-top">
-          <span>Quiz · 4 options · 1 correct</span>
-          <span className="pts">+0.5</span>
-        </div>
-        <p>Beginning 1,000 · sales 5,000 · target ending 2,000. Production?</p>
-        <div className="opts">
-          <span>A · 4,000</span>
-          <span className="ok">B · 6,000 ✓</span>
-          <span>C · 7,000</span>
-          <span>D · None</span>
-        </div>
-      </div>
-      <div className="exam">
-        <div className="exam-cap">Your exam · example</div>
-        <div className="exam-big">5 d 3 h</div>
-        <div className="exam-bar">
-          <i />
-        </div>
-        <div className="exam-note">6 of 15 parts done · progress saved</div>
-      </div>
-    </figure>
-  );
-}
-
-function TableRow({ label, cells, total }: { label: string; cells: string[]; total?: boolean }) {
-  return (
-    <>
-      <span className={total ? "l tot" : "l"}>{label}</span>
-      {cells.map((c, i) => (
-        <span
-          key={i}
-          className={["r", c === "?" ? "q" : "", i === 4 ? "yr" : "", total ? "tot" : ""].filter(Boolean).join(" ")}
-        >
-          {c}
-        </span>
-      ))}
-    </>
   );
 }
 
@@ -204,7 +125,7 @@ export default function Home() {
               <HeroCta />
             </Suspense>
           </div>
-          <Collage />
+          <LandingShowcase />
         </div>
       </section>
 
