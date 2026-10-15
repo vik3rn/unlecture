@@ -236,7 +236,8 @@ function pdfLink(v: unknown): string | null {
 function mock(v: unknown, f: GuideFormat): GuideMock | null {
   if (!v || typeof v !== "object") return null;
   const m = v as Record<string, unknown>;
-  if (typeof m.id !== "string" || !/^[a-z0-9-]{1,40}$/.test(m.id)) return null;
+  // "constructor" would match a built-in of every object (progress.mocks?.[id]), so it is not a valid id.
+  if (typeof m.id !== "string" || !/^[a-z0-9-]{1,40}$/.test(m.id) || m.id in Object.prototype) return null;
   const questions = list(m.questions, (q) => mockQuestion(q, f), 150);
   if (questions.length === 0) return null;
   let mcq = 0;

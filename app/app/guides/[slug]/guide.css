@@ -300,6 +300,8 @@
 /* mock exams: list on the overview, timer bar, rules, result */
 .dg .unit-note { margin: -4px 0 12px; font-size: 14px; color: var(--ink-2); }
 .dg .badge.hot { background: var(--orange-soft); color: var(--orange-ink); }
+.dg .row .mock-status { display: none; }
+@media (max-width: 520px) { .dg .row .mock-status { display: block; font-weight: 600; color: var(--accent); } }
 .dg button.cta { border: 0; cursor: pointer; }
 .dg a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 .dg .bar .spacer { flex: 1; }
@@ -331,6 +333,14 @@
 .dg table.topics tbody th { font-weight: 600; }
 .dg .share { display: flex; align-items: center; gap: 10px; min-width: 130px; white-space: nowrap; }
 .dg .share .meter { flex: 1; height: 6px; }
+.dg table.topics .pts { white-space: nowrap; }
+/* phones: the table fits without scrolling (the question count is the least needed column) */
+@media (max-width: 520px) {
+  .dg table.topics th, .dg table.topics td { padding: 8px 6px; }
+  .dg table.topics .n { display: none; }
+  .dg .share { min-width: 0; gap: 6px; }
+  .dg .share .meter { min-width: 32px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .dg .meter i, .dg .vid .play .circle, .dg .row, .dg .row .go { transition: none; }

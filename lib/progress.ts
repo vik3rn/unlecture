@@ -91,9 +91,11 @@ function cleanMock(id: string, v: unknown): MockState | null {
     if (!isObject(h)) continue;
     const { score, max } = h;
     const at = time(h.at);
+    // A score never passes the maximum either way (the worst is every question wrong at a 100 % penalty), so a
+    // hand-made row cannot skew the averages on /app/admin.
     if (
-      typeof score === "number" && Number.isFinite(score) && Math.abs(score) <= 10_000 &&
-      typeof max === "number" && Number.isFinite(max) && max > 0 && max <= 10_000 && at !== null
+      typeof max === "number" && Number.isFinite(max) && max > 0 && max <= 10_000 &&
+      typeof score === "number" && Number.isFinite(score) && Math.abs(score) <= max && at !== null
     ) {
       history.push({ score: round3(score), max: round3(max), at });
     }
@@ -156,6 +158,18 @@ export function cleanProgress(input: unknown): GuideProgress | null {
   }
   if (Object.keys(ms).length) out.mocks = ms;
   return out;
+}
+
+// The same progress, whatever the order of the keys (jsonb sorts them, the browser keeps insertion order) and
+// whatever empty parts one side has: both go through cleanProgress first.
+export function sameProgress(a: unknown, b: unknown) {
+  const canon = (v: unknown) =>
+    JSON.stringify(cleanProgress(v), (_, x) =>
+      x && typeof x === "object" && !Array.isArray(x)
+        ? Object.fromEntries(Object.entries(x).sort(([k1], [k2]) => (k1 < k2 ? -1 : k1 > k2 ? 1 : 0)))
+        : x,
+    );
+  return canon(a) === canon(b);
 }
 
 // Size of the row as the table's check measures it, octet_length(progress::text): the JSON in UTF-8, plus the space

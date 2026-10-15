@@ -9,6 +9,7 @@ import {
   fmtPoints,
   GRADES,
   gradeLabel,
+  pointsWord,
   WORDS_PER_LINE,
   wordCount,
   type ChoiceStatus,
@@ -17,8 +18,6 @@ import { Html } from "./ui";
 
 // Building blocks for guides with an exam format: single-answer questions, open answers with a line limit, the
 // model answer and the self-grade. Shared by the part pages and the mock exams.
-
-const pointsWord = (x: number) => `${fmtPoints(x)} ${x === 1 ? "point" : "points"}`;
 
 export const STATUS_CLASS: Record<ChoiceStatus, string> = { right: "s2", partial: "s1", blank: "s1", wrong: "s0" };
 
@@ -196,8 +195,10 @@ export function SingleQuiz({
   );
 }
 
-// Typing stays in the component and reaches the progress half a second after the last key, on blur, and when the
-// question leaves the page, so a long answer does not re-render the whole guide on every key.
+// Typing stays in the component and reaches the progress half a second after the last key, on blur, when the tab
+// is hidden or closed, and when the question leaves the page (also when navigation keeps the page hidden in
+// <Activity>), so a long answer does not re-render the whole guide on every key. The progress saves a change made
+// while the tab is hidden at once. A new text from elsewhere (another tab) arrives by remounting (progress `rev`).
 export function useDraft(initial: string, commit: (text: string) => void) {
   const [draft, setDraft] = useState(initial);
   const pending = useRef<string | null>(null);
@@ -214,7 +215,16 @@ export function useDraft(initial: string, commit: (text: string) => void) {
     pending.current = null;
     commitRef.current(text);
   }, []);
-  useEffect(() => flush, [flush]);
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      flush();
+    };
+  }, [flush]);
   const change = useCallback(
     (text: string) => {
       setDraft(text);
@@ -231,6 +241,7 @@ export function useDraft(initial: string, commit: (text: string) => void) {
 // counter is not a live region: it is read with the field, not on every key.
 export function AnswerBox({
   id,
+  label,
   describedBy,
   lines,
   value,
@@ -239,6 +250,7 @@ export function AnswerBox({
   disabled = false,
 }: {
   id: string;
+  label: string; // the question it answers, for screen readers ("question 3"); shown as "Your answer"
   describedBy?: string;
   lines: number;
   value: string;
@@ -252,7 +264,7 @@ export function AnswerBox({
   return (
     <div className="answer">
       <label htmlFor={`${id}-text`} className="al">
-        Your answer
+        Your answer<span className="sr-only"> to {label}</span>
       </label>
       <textarea
         id={`${id}-text`}
@@ -307,18 +319,22 @@ export function ModelAnswer({ model, rubric }: { model: string; rubric: string[]
 // Self-grade against the model answer: 0, half or full points.
 export function SelfGrade({
   name,
+  label,
   points,
   value,
   onChange,
 }: {
   name: string;
+  label: string; // the question, for screen readers ("question 3")
   points: number;
   value: number | undefined;
   onChange: (grade: number) => void;
 }) {
   return (
     <fieldset className="grade">
-      <legend>Grade your answer against the model</legend>
+      <legend>
+        Grade your answer<span className="sr-only"> to {label}</span> against the model
+      </legend>
       <div className="grade-opts">
         {GRADES.map((g) => (
           <label key={g} className={`gopt${value === g ? " on" : ""}`}>
@@ -337,7 +353,7 @@ export function SelfGrade({
 export function OpenPractice({
   id,
   q,
-  label,
+  n,
   value,
   grade,
   onText,
@@ -345,7 +361,7 @@ export function OpenPractice({
 }: {
   id: string;
   q: GuideOpen;
-  label: string;
+  n: number; // the open question's number in the part, from 1
   value: string;
   grade: number | undefined;
   onText: (text: string) => void;
@@ -359,12 +375,20 @@ export function OpenPractice({
     <div className="q open-q">
       <div className="qh">
         <span className={`src ${q.src}`}>{q.src === "video" ? "Video drill" : "Paper"}</span>
-        {label}
+        Open question · {n}
         <span className="pts">{pointsWord(q.points)}</span>
       </div>
       {q.ctx && <Html html={q.ctx} block className="ctx" />}
       <Html id={stemId} html={q.stem} block className="stem" />
-      <AnswerBox id={id} describedBy={stemId} lines={q.lines} value={draft} onChange={change} onBlur={flush} />
+      <AnswerBox
+        id={id}
+        label={`open question ${n}`}
+        describedBy={stemId}
+        lines={q.lines}
+        value={draft}
+        onChange={change}
+        onBlur={flush}
+      />
       {hasModel && (
         <>
           <div className="qa">
@@ -385,7 +409,7 @@ export function OpenPractice({
           </div>
           <div id={`${id}-model`} hidden={!open}>
             <ModelAnswer model={q.model} rubric={q.rubric} />
-            <SelfGrade name={`${id}-grade`} points={q.points} value={grade} onChange={onGrade} />
+            <SelfGrade name={`${id}-grade`} label={`open question ${n}`} points={q.points} value={grade} onChange={onGrade} />
           </div>
         </>
       )}

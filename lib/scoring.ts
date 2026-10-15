@@ -103,6 +103,16 @@ export function clock(ms: number) {
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 }
 
+// The time left in steps for screen readers: every ten minutes, then 10, 5 and 1 minute ("at most N minutes").
+// The mock timer announces a step only when the clock passes into it, never every second.
+export function timeStep(left: number) {
+  const min = Math.ceil(left / 60_000);
+  if (min <= 1) return 1;
+  if (min <= 5) return 5;
+  if (min <= 10) return 10;
+  return Math.ceil(min / 10) * 10;
+}
+
 export type QuestionResult = {
   i: number;
   key: string;
@@ -199,3 +209,12 @@ export function recordScore(history: MockScore[], entry: MockScore, cap = 20): M
 }
 
 export const pct = (score: number, max: number) => (max > 0 ? Math.round((100 * score) / max) : 0);
+
+// "24 %", "−4 %" (a typographic minus, like the points).
+export const fmtPct = (score: number, max: number) => {
+  const p = pct(score, max);
+  return `${p < 0 ? "\u2212" : ""}${Math.abs(p)} %`;
+};
+
+// "1 point", "0.5 points", "−0.125 points".
+export const pointsWord = (x: number) => `${fmtPoints(x)} ${round3(x) === 1 ? "point" : "points"}`;

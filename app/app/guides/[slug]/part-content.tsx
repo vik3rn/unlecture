@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LogoMark } from "@/app/components/logo";
 import { LETTERS, mmss, openKeys, plain, questionKeys, type GuideFormat, type GuidePart, type GuideQuestion } from "@/lib/guides";
-import { fmtPoints, quizRule, round3, scoringRule, tallyPicks } from "@/lib/scoring";
+import { fmtPoints, pointsWord, quizRule, round3, scoringRule, tallyPicks } from "@/lib/scoring";
 import { OpenPractice, SingleQuiz } from "./answers";
 import { useGuide } from "./progress";
 import { Html } from "./ui";
@@ -13,7 +13,7 @@ import { Html } from "./ui";
 const YT_ORIGIN = "https://www.youtube-nocookie.com";
 
 export function PartContent({ part, format }: { part: GuidePart; format: GuideFormat }) {
-  const { slug, progress, update } = useGuide();
+  const { slug, progress, update, rev } = useGuide();
   const frame = useRef<HTMLIFrameElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -257,7 +257,7 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
             <p className="tally">
               {tally.answered > 0 ? (
                 <>
-                  Your score: <b>{fmtPoints(tally.points)}</b> of {fmtPoints(tally.max)} points · {tally.right} right ·{" "}
+                  Your score: <b>{fmtPoints(tally.points)}</b> of {pointsWord(tally.max)} · {tally.right} right ·{" "}
                   {tally.wrong} wrong · {tally.blank} blank
                 </>
               ) : (
@@ -317,16 +317,16 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
           </h2>
           {graded > 0 && (
             <p className="tally">
-              Self-graded: <b>{fmtPoints(round3(openPoints))}</b> of {fmtPoints(round3(openMax))} points · {graded}/
+              Self-graded: <b>{fmtPoints(round3(openPoints))}</b> of {pointsWord(openMax)} · {graded}/
               {opens.length} graded
             </p>
           )}
           {opens.map(({ q, key }, i) => (
             <OpenPractice
-              key={key}
+              key={`${key}-${rev}`}
               id={`o-${key}`}
               q={q}
-              label={`Open question · ${i + 1}`}
+              n={i + 1}
               value={progress.open?.[key] ?? ""}
               grade={progress.grade?.[key]}
               onText={(t) =>

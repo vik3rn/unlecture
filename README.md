@@ -48,4 +48,5 @@ The free preview reads guides on the server with `SUPABASE_SECRET_KEY` (Supabase
 - `lib/guides.ts`: the shape of a guide and a strict parser that only lets a short list of HTML tags through. A guide may set its exam `format` (options, correct answers, points, penalty, blank allowed, label), open questions per part (`opens`) and timed `mocks`; without `format` it keeps the DAE rules (pick two of six, no penalty).
 - `lib/scoring.ts`: exam scoring for single-answer quizzes and mock exams (penalties, blanks, self-graded open answers, topics).
 - `lib/progress.ts`: the shape of a student's saved progress and the strict check every save goes through (size limits included).
+- `lib/progress-sync.ts` and `app/api/guide-progress/route.ts`: saving progress (debounced, retried, at once when the tab is hidden) and reading the student's own row again when a tab comes back into view, so an old tab does not overwrite newer work.
 - `supabase/migrations/`: SQL for tables, grants and RLS policies.

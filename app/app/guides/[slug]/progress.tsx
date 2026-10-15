@@ -1,10 +1,12 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { cleanProgress } from "@/lib/progress";
+import { ProgressSync, type SaveState } from "@/lib/progress-sync";
 import { saveGuideProgress, type GuideProgress } from "../actions";
 
+export type { SaveState };
 export type Update = (fn: (p: GuideProgress) => GuideProgress) => void;
-export type SaveState = "idle" | "saving" | "saved" | "error" | "full";
 
 export const EMPTY_PROGRESS: GuideProgress = { done: {}, quiz: {} };
 
@@ -15,15 +17,30 @@ type GuideState = {
   progress: GuideProgress;
   update: Update;
   saveState: SaveState;
+  // Goes up when the progress was replaced by a newer version from the server (another tab or device). Components
+  // that keep a draft of their own (open answers) use it in their key, so they start again from the new text.
+  rev: number;
 };
 
 const GuideContext = createContext<GuideState | null>(null);
 
 export const guideBase = (slug: string, guest: boolean) => (guest ? `/guides/${slug}` : `/app/guides/${slug}`);
 
+// The saved progress (app/api/guide-progress): null when nothing is saved yet, undefined when it could not be read.
+async function loadProgress(guideId: string): Promise<GuideProgress | null | undefined> {
+  try {
+    const r = await fetch(`/api/guide-progress?guide=${encodeURIComponent(guideId)}`, { cache: "no-store" });
+    if (!r.ok) return undefined;
+    const { progress } = (await r.json()) as { progress?: unknown };
+    return progress == null ? null : (cleanProgress(progress) ?? undefined);
+  } catch {
+    return undefined;
+  }
+}
+
 // Lives in the guide's layout, so progress stays in memory while the student moves between the overview and the
-// parts. Each change is saved to Supabase shortly after; saves run one after another and always send the newest
-// state. In the free preview (guest) nothing is saved.
+// parts. Saving, retrying and reading the saved progress again when the tab comes back into view are in
+// lib/progress-sync.ts. In the free preview (guest) nothing is saved or read.
 export function ProgressProvider({
   slug,
   guideId,
@@ -39,55 +56,46 @@ export function ProgressProvider({
 }) {
   const [progress, setProgress] = useState<GuideProgress>(() => initial ?? EMPTY_PROGRESS);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const latest = useRef(progress);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const chain = useRef<Promise<void>>(Promise.resolve());
-
-  const save = useCallback(() => {
-    chain.current = chain.current.then(async () => {
-      const r = await saveGuideProgress(guideId, latest.current).catch(() => ({ error: "offline", tooLarge: false }));
-      if (!timer.current) setSaveState(r.tooLarge ? "full" : r.error ? "error" : "saved");
-    });
-  }, [guideId]);
-
-  const update = useCallback<Update>(
-    (fn) => {
-      const next = fn(latest.current);
-      if (next === latest.current) return;
-      latest.current = next;
-      setProgress(next);
-      if (guest) return;
-      setSaveState("saving");
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => {
-        timer.current = null;
-        save();
-      }, 800);
-    },
-    [save, guest],
+  const [rev, setRev] = useState(0);
+  const [sync] = useState(
+    () =>
+      new ProgressSync(initial ?? EMPTY_PROGRESS, {
+        guest,
+        save: (p) => saveGuideProgress(guideId, p),
+        load: () => loadProgress(guideId),
+        show: (p, fromServer) => {
+          setProgress(p);
+          if (fromServer) setRev((x) => x + 1);
+        },
+        state: setSaveState,
+      }),
   );
 
-  // Leaving the tab or the guide: save right away instead of waiting for the timer.
+  const update = useCallback<Update>((fn) => sync.change(fn), [sync]);
+
+  // Leaving the tab or the guide: save right away. Coming back: read the saved progress again.
+  const shownBefore = useRef(false);
   useEffect(() => {
-    const flush = () => {
-      if (!timer.current) return;
-      clearTimeout(timer.current);
-      timer.current = null;
-      save();
-    };
-    const onHide = () => {
-      if (document.visibilityState === "hidden") flush();
-    };
-    document.addEventListener("visibilitychange", onHide);
+    const refresh = () => sync.refresh();
+    const online = () => sync.online();
+    const onVisibility = () => (document.visibilityState === "hidden" ? sync.flush() : sync.refresh());
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("online", online);
+    // Shown again after client-side navigation kept the guide hidden (<Activity>): it may be out of date.
+    if (shownBefore.current) sync.refresh();
+    shownBefore.current = true;
     return () => {
-      document.removeEventListener("visibilitychange", onHide);
-      flush();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("online", online);
+      sync.flush();
     };
-  }, [save]);
+  }, [sync]);
 
   const value = useMemo(
-    () => ({ slug, base: guideBase(slug, guest), guest, progress, update, saveState }),
-    [slug, guest, progress, update, saveState],
+    () => ({ slug, base: guideBase(slug, guest), guest, progress, update, saveState, rev }),
+    [slug, guest, progress, update, saveState, rev],
   );
   return <GuideContext value={value}>{children}</GuideContext>;
 }

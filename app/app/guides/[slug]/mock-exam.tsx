@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { plain, type GuideFormat, type GuideMock, type MockMcq, type MockOpen } from "@/lib/guides";
 import type { MockState } from "@/lib/progress";
 import {
@@ -9,14 +9,17 @@ import {
   choicePoints,
   choiceStatus,
   clock,
+  fmtPct,
   fmtPoints,
   mockDeadline,
   mockKey,
   pct,
   pickOfText,
+  pointsWord,
   recordScore,
   scoreMock,
   scoringRule,
+  timeStep,
   type QuestionResult,
 } from "@/lib/scoring";
 import { AnswerBox, ChoiceOptions, ModelAnswer, SelfGrade, STATUS_CLASS, statusText, useDraft } from "./answers";
@@ -38,18 +41,6 @@ const subscribeSecond = (cb: () => void) => {
 const secondNow = () => Math.floor(Date.now() / 1000) * 1000;
 const noTime = () => null;
 
-const pointsWord = (x: number) => `${fmtPoints(x)} ${x === 1 ? "point" : "points"}`;
-
-// What screen readers hear: a polite note every ten minutes, then at 10, 5 and 1 minute left. Never every second.
-function timeNote(left: number) {
-  const min = Math.ceil(left / 60_000);
-  if (left <= 0) return "Time is up. Your exam was submitted.";
-  if (min <= 1) return "1 minute left.";
-  if (min <= 5) return "5 minutes left.";
-  if (min <= 10) return "10 minutes left.";
-  return `${Math.ceil(min / 10) * 10} minutes left.`;
-}
-
 function Timer({ deadline, onExpire }: { deadline: number; onExpire: () => void }) {
   const now = useSyncExternalStore(subscribeSecond, secondNow, noTime);
   const left = now === null ? null : deadline - now;
@@ -57,6 +48,12 @@ function Timer({ deadline, onExpire }: { deadline: number; onExpire: () => void 
   useEffect(() => {
     if (expired) onExpire();
   }, [expired, onExpire]);
+  // What screen readers hear, politely: a note each time the clock passes a step, never every second. The step the
+  // clock shows first is not announced (the student just started or came back, possibly with less time left).
+  const step = left === null ? null : timeStep(left);
+  const [firstStep, setFirstStep] = useState<number | null>(null);
+  if (step !== null && firstStep === null) setFirstStep(step);
+  const note = step !== null && firstStep !== null && step !== firstStep ? `${step} ${step === 1 ? "minute" : "minutes"} left.` : "";
   return (
     <span className={`timer${left !== null && left < 5 * 60_000 ? " low" : ""}`}>
       <span className="tl">Time left</span>{" "}
@@ -64,7 +61,7 @@ function Timer({ deadline, onExpire }: { deadline: number; onExpire: () => void 
         {left === null ? "--:--" : clock(left)}
       </span>
       <span className="sr-only" role="status">
-        {left === null ? "" : timeNote(left)}
+        {note}
       </span>
     </span>
   );
@@ -81,12 +78,18 @@ export function MockExam({
   walkthrough: Walkthrough;
   brand: string;
 }) {
-  const { base, progress, update, saveState } = useGuide();
+  const { base, progress, update, saveState, rev } = useGuide();
   const state = progress.mocks?.[mock.id] ?? null;
   const [rulesAgain, setRulesAgain] = useState(false); // "Retake": show the rules before the new attempt starts
   const [asking, setAsking] = useState(false); // "Submit now?" shown under the questions
   const yes = useRef<HTMLButtonElement>(null);
   const view = !state || rulesAgain ? "start" : state.submittedAt === null ? "exam" : "result";
+  // Ids stay unique when navigation keeps another mock's page hidden in the document (<Activity>).
+  const uid = (x: string) => `${mock.id}-${x}`;
+
+  // "Submit now?" is a passing question: close it when navigation hides this page, so coming back does not jump
+  // to it and move the focus.
+  useLayoutEffect(() => () => setAsking(false), []);
 
   // Move focus to the new screen's heading when the screen changes (not on the first render).
   const heading = useRef<HTMLHeadingElement>(null);
@@ -172,8 +175,8 @@ export function MockExam({
   const history =
     best && last ? (
       <p className="history">
-        Best {fmtPoints(best.score)}/{fmtPoints(best.max)} ({pct(best.score, best.max)} %) · last {fmtPoints(last.score)}/
-        {fmtPoints(last.max)} ({pct(last.score, last.max)} %) · {tries} {tries === 1 ? "attempt" : "attempts"}
+        Best {fmtPoints(best.score)}/{fmtPoints(best.max)} ({fmtPct(best.score, best.max)}) · last {fmtPoints(last.score)}/
+        {fmtPoints(last.max)} ({fmtPct(last.score, last.max)}) · {tries} {tries === 1 ? "attempt" : "attempts"}
       </p>
     ) : null;
 
@@ -217,8 +220,8 @@ export function MockExam({
             <Html html={mock.title} />
           </h1>
           {mock.intro && <Html html={mock.intro} block className="lede" />}
-          <section className="card-x rules" aria-labelledby="rules">
-            <h2 id="rules">Before you start</h2>
+          <section className="card-x rules" aria-labelledby={uid("rules")}>
+            <h2 id={uid("rules")}>Before you start</h2>
             <ul>
               <li>
                 <b>{mock.minutes} minutes</b>, timed. The clock starts when you press Start and keeps running if you
@@ -300,6 +303,7 @@ export function MockExam({
                     />
                   ) : (
                     <ExamOpen
+                      key={`${key}-${rev}`}
                       id={`${mock.id}-${key}`}
                       i={i}
                       q={q}
@@ -312,8 +316,8 @@ export function MockExam({
             })}
           </ol>
           {asking ? (
-            <div className="finish confirm" role="group" aria-labelledby="confirm-q">
-              <p id="confirm-q">
+            <div className="finish confirm" role="group" aria-labelledby={uid("confirm")}>
+              <p id={uid("confirm")}>
                 <b>Submit now?</b>{" "}
                 {unanswered > 0
                   ? `${unanswered} of ${mock.questions.length} questions ${unanswered === 1 ? "has" : "have"} no answer.`
@@ -353,6 +357,7 @@ export function MockExam({
   // The result.
   const r = state ? scoreMock(mock, format, state) : null;
   if (!state || !r) return null;
+  const timeWasUp = state.submittedAt === deadline;
   return (
     <div className="dg">
       {bar}
@@ -361,6 +366,7 @@ export function MockExam({
         <h1 ref={heading} tabIndex={-1}>
           <Html html={mock.title} />
         </h1>
+        {timeWasUp && <p className="note plain">Time was up, so your answers were submitted automatically.</p>}
 
         <section className="progress-card result" aria-label="Your score">
           <div className="pc-top">
@@ -368,7 +374,7 @@ export function MockExam({
               <p className="pc-label">{r.open.ungraded > 0 ? "Your score so far" : "Your score"}</p>
               <p className="pc-num">
                 {fmtPoints(r.total)} / {fmtPoints(r.max)} points{" "}
-                <span className="pc-pct">({pct(r.total, r.max)} %)</span>
+                <span className="pc-pct">({fmtPct(r.total, r.max)})</span>
               </p>
               <p className="pc-sub">
                 Multiple choice {fmtPoints(r.mcq.points)}/{fmtPoints(r.mcq.max)}: {r.mcq.right} right · {r.mcq.wrong}{" "}
@@ -414,14 +420,16 @@ export function MockExam({
         )}
 
         {r.topics.length > 1 && (
-          <section className="sec" aria-labelledby="by-topic">
-            <h2 id="by-topic">By topic</h2>
+          <section className="sec" aria-labelledby={uid("by-topic")}>
+            <h2 id={uid("by-topic")}>By topic</h2>
             <div className="topics-wrap">
               <table className="topics">
                 <thead>
                   <tr>
                     <th scope="col">Topic</th>
-                    <th scope="col">Questions</th>
+                    <th scope="col" className="n">
+                      Questions
+                    </th>
                     <th scope="col">Points</th>
                     <th scope="col">Share</th>
                   </tr>
@@ -430,8 +438,8 @@ export function MockExam({
                   {r.topics.map((t) => (
                     <tr key={t.topic}>
                       <th scope="row">{t.topic}</th>
-                      <td>{t.count}</td>
-                      <td>
+                      <td className="n">{t.count}</td>
+                      <td className="pts">
                         {fmtPoints(t.points)} / {fmtPoints(t.max)}
                       </td>
                       <td>
@@ -439,7 +447,7 @@ export function MockExam({
                           <span className="meter" aria-hidden="true">
                             <i style={{ width: `${Math.max(0, Math.min(100, pct(t.points, t.max)))}%` }} />
                           </span>
-                          {pct(t.points, t.max)} %
+                          {fmtPct(t.points, t.max)}
                         </span>
                       </td>
                     </tr>
@@ -450,8 +458,8 @@ export function MockExam({
           </section>
         )}
 
-        <section className="sec" aria-labelledby="review">
-          <h2 id="review">
+        <section className="sec" aria-labelledby={uid("review")}>
+          <h2 id={uid("review")}>
             Review <span className="cnt">every question with the answer explained</span>
           </h2>
           <ol className="exam-qs">
@@ -570,7 +578,15 @@ function ExamOpen({
       <QuestionHead i={i} points={q.points} />
       {q.ctx && <Html html={q.ctx} block className="ctx" />}
       <Html id={stemId} html={q.stem} block className="stem" />
-      <AnswerBox id={id} describedBy={stemId} lines={q.lines} value={draft} onChange={change} onBlur={flush} />
+      <AnswerBox
+        id={id}
+        label={`question ${i + 1}`}
+        describedBy={stemId}
+        lines={q.lines}
+        value={draft}
+        onChange={change}
+        onBlur={flush}
+      />
     </div>
   );
 }
@@ -651,7 +667,9 @@ function ReviewOpen({
       <p className="ml">Your answer</p>
       {answer.trim() ? <p className="mine">{answer}</p> : <p className="mine empty">You left this blank.</p>}
       <ModelAnswer model={q.model} rubric={q.rubric} />
-      {answer.trim() && <SelfGrade name={`${id}-grade`} points={q.points} value={grade} onChange={onGrade} />}
+      {answer.trim() && (
+        <SelfGrade name={`${id}-grade`} label={`question ${i + 1}`} points={q.points} value={grade} onChange={onGrade} />
+      )}
     </div>
   );
 }

@@ -80,7 +80,8 @@ export function CourseOverview({
       opens > 0 || mocks.length > 0
         ? "Reset all quiz answers, open answers, mock exams and done marks in this guide?"
         : "Reset all quiz answers and done marks in this guide?";
-    if (window.confirm(what)) update(() => EMPTY_PROGRESS);
+    // The student's own exam date is a setting, not an answer: it stays.
+    if (window.confirm(what)) update((p) => (p.exam ? { ...EMPTY_PROGRESS, exam: p.exam } : EMPTY_PROGRESS));
   };
 
   return (
