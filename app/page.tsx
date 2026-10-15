@@ -9,8 +9,8 @@ import "./landing.css";
 // a course list next to examples from the guides that flip every 5 seconds (app/components/landing-examples.tsx).
 // Styles live in landing.css, scoped to .lp, and the page fills wide screens (max 1440 px). Only the parts that
 // depend on the login stream in (Suspense); the rest is static. No fixed exam date: students from several classes
-// use the guides and add their own date. When the Management Control guide is live, give its card a "Live" badge
-// and links like the DAE card.
+// use the guides and add their own date. A new guide gets a course card with its slug (free preview for guests,
+// "Open the guide" when logged in).
 
 const steps = [
   { name: "Watch", text: "Short videos on the page. Pause at every stop sign and solve on paper.", warm: false },
@@ -56,19 +56,19 @@ async function HeroCta() {
   );
 }
 
-function PreviewLink() {
+function PreviewLink({ slug }: { slug: string }) {
   return (
-    <Link href="/guides/dae-midterm" className="c-link">
+    <Link href={`/guides/${slug}`} className="c-link">
       Free preview: Part 0
     </Link>
   );
 }
 
-async function DaeAction() {
+async function GuideAction({ slug }: { slug: string }) {
   const user = await getCurrentUser();
-  if (!user) return <PreviewLink />;
+  if (!user) return <PreviewLink slug={slug} />;
   return (
-    <Link href="/app/guides/dae-midterm" className="c-btn">
+    <Link href={`/app/guides/${slug}`} className="c-btn">
       Open the guide <span aria-hidden="true">→</span>
     </Link>
   );
@@ -101,23 +101,27 @@ export default function Home() {
                   <p>Midterm · 15 parts · 108 exam-style questions · 54 paper exercises</p>
                 </div>
                 <div className="c-act">
-                  <Suspense fallback={<PreviewLink />}>
-                    <DaeAction />
+                  <Suspense fallback={<PreviewLink slug="dae-midterm" />}>
+                    <GuideAction slug="dae-midterm" />
                   </Suspense>
                 </div>
               </article>
-              <article className="course soon">
+              <article className="course">
                 <div className="c-mark" aria-hidden="true">
                   MC
                 </div>
                 <div className="c-body">
                   <div className="c-title">
                     <h3>Management Control</h3>
-                    <span className="badge warm">Coming Friday 16 October</span>
+                    <span className="badge live">Live</span>
                   </div>
-                  <p>Midterm · 17 parts · worked cases · 4 timed mock exams</p>
+                  <p>Midterm · 17 parts · 90 exam-style questions · 4 timed mock exams</p>
                 </div>
-                <p className="c-soon">It appears in your account when it is published.</p>
+                <div className="c-act">
+                  <Suspense fallback={<PreviewLink slug="management-control-midterm" />}>
+                    <GuideAction slug="management-control-midterm" />
+                  </Suspense>
+                </div>
               </article>
             </div>
 
