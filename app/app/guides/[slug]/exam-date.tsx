@@ -50,7 +50,7 @@ export function ExamDate() {
 
   if (editing) {
     return (
-      <form className="exam-form" onSubmit={saveExam} aria-label="Your exam date">
+      <form id="exam" className="exam-form" onSubmit={saveExam} aria-label="Your exam date">
         <label>
           <span>Date</span>
           <input type="date" required value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
@@ -93,14 +93,14 @@ export function ExamDate() {
 
   if (!exam) {
     return (
-      <button type="button" className="exam-add" onClick={open}>
+      <button id="exam" type="button" className="exam-add" onClick={open}>
         + Add your exam date
       </button>
     );
   }
 
   return (
-    <p className="exam-set">
+    <p id="exam" className="exam-set">
       <span className="chip hot">
         Your exam: {formatExam(exam)}{" · "}
         <Countdown at={examInstant(exam)} />

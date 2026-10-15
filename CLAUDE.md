@@ -1,5 +1,5 @@
 ## Grading contract — EdTech Challenge (never remove or break this)
-> **TEMPORARY (13 Oct 2026):** at the owner's request the study list (`core-input`, `core-submit`, `core-item`) is hidden on `/app` until after the DAE exam on Fri 16 Oct 2026. The bot cannot grade the core feature until it is back. Restore it right after Friday by reverting the commit "Hide the study list until after the exam" (`git revert <that commit>`).
+> **TEMPORARY (13 Oct 2026):** at the owner's request the study list (`core-input`, `core-submit`, `core-item`) is hidden on `/app` until after the DAE exam on Fri 16 Oct 2026. The bot cannot grade the core feature until it is back. Restore it right after Friday. `/app` was redesigned on 15 Oct, so do not `git revert` cffeb04: re-add its `StudyPackList` + `NewPackForm` code (shown by `git show cffeb04`) as a "Need a guide for another course?" panel at the bottom of the new page, with the same data-testid names.
 
 An automated bot grades this app on its public Vercel URL, acting like a stranger.
 
