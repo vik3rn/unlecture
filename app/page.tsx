@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { LandingShowcase } from "@/app/components/landing-showcase";
+import { LandingExamples } from "@/app/components/landing-examples";
 import { getCurrentUser } from "@/lib/supabase/server";
 import "./landing.css";
 
 // Public landing page (grading contract in CLAUDE.md): what Unlecture does, who it is for, and ONE sign-up button
 // to /signup. Logged-in students get "Go to my guides" there instead. The first screen puts the courses up front:
-// a course list next to examples from the guides that flip every 5 seconds (app/components/landing-showcase.tsx).
+// a course list next to examples from the guides that flip every 5 seconds (app/components/landing-examples.tsx).
 // Styles live in landing.css, scoped to .lp, and the page fills wide screens (max 1440 px). Only the parts that
 // depend on the login stream in (Suspense); the rest is static. No fixed exam date: students from several classes
 // use the guides and add their own date. When the Management Control guide is live, give its card a "Live" badge
@@ -125,7 +125,7 @@ export default function Home() {
               <HeroCta />
             </Suspense>
           </div>
-          <LandingShowcase />
+          <LandingExamples />
         </div>
       </section>
 

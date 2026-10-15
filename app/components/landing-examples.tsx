@@ -219,7 +219,7 @@ function Row({ label, cells, total }: { label: string; cells: string[]; total: b
   );
 }
 
-export function LandingShowcase() {
+export function LandingExamples() {
   const [i, setI] = useState(0);
   const [reduced, setReduced] = useState(false);
 
