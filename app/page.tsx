@@ -45,7 +45,7 @@ async function HeroCta() {
   if (!user) return <SignupCta />;
   return (
     <div className="cta-row">
-      <Link href="/app" className="cta">
+      <Link href="/app/guides" className="cta">
         Go to my guides
         <span aria-hidden="true" className="arr">
           →

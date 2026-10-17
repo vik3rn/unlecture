@@ -42,9 +42,11 @@ export function cleanNote(input: unknown): { row: Omit<Note, "id" | "created_at"
   if (!body) return { error: "Write your note first." };
   if (body.length > NOTE_MAX) return { error: `Keep it under ${NOTE_MAX} characters.` };
   const kind = KINDS.includes(i.kind as NoteKind) ? (i.kind as NoteKind) : "note";
+  // Every note belongs to a course (there is no "General" any more); the part is optional (a note for the course).
   const guideId = typeof i.guideId === "string" && UUID.test(i.guideId) ? i.guideId.toLowerCase() : null;
+  if (!guideId) return { error: "Choose a course for the note." };
   const intIn = (v: unknown, max: number) => (typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= max ? v : null);
-  const part = guideId ? intIn(i.part, 200) : null;
+  const part = intIn(i.part, 200);
   const videoAt = part !== null ? intIn(typeof i.videoAt === "number" ? Math.floor(i.videoAt) : i.videoAt, 36000) : null;
   const ref = part !== null && typeof i.ref === "string" && REF.test(i.ref) ? i.ref : null;
   let source = SOURCES.includes(i.source as NoteSource) ? (i.source as NoteSource) : "general";
@@ -88,6 +90,53 @@ export function groupNotes<G extends { id: string }>(notes: Note[], guides: G[],
   });
 }
 
+// The order to read notes in: by part (notes for the whole course last), then by the moment in the video, then by
+// when they were written.
+export function readingOrder(a: Note, b: Note) {
+  const pa = a.part ?? 1e6;
+  const pb = b.part ?? 1e6;
+  if (pa !== pb) return pa - pb;
+  const va = a.video_at ?? 1e7;
+  const vb = b.video_at ?? 1e7;
+  if (va !== vb) return va - vb;
+  return (Date.parse(a.created_at) || 0) - (Date.parse(b.created_at) || 0);
+}
+
+// One course's notes as a summary (the Summary page and the PDF): the questions to clear up, the key points saved,
+// and the student's own notes part by part, all in reading order.
+export function summarize(notes: Note[]) {
+  const sorted = notes.slice().sort(readingOrder);
+  const questions = sorted.filter((n) => n.kind === "question");
+  const keyPoints = sorted.filter((n) => n.kind === "note" && n.source === "keypoint");
+  const own = sorted.filter((n) => n.kind === "note" && n.source !== "keypoint");
+  const parts: { part: number | null; notes: Note[] }[] = [];
+  for (const n of own) {
+    const last = parts.at(-1);
+    if (last && last.part === n.part) last.notes.push(n);
+    else parts.push({ part: n.part, notes: [n] });
+  }
+  const covered = new Set(sorted.map((n) => n.part).filter((p) => p !== null)).size;
+  const times = sorted.map((n) => Date.parse(n.created_at)).filter((t) => !Number.isNaN(t));
+  return {
+    total: sorted.length,
+    questions,
+    keyPoints,
+    own,
+    parts,
+    covered,
+    first: times.length ? new Date(Math.min(...times)).toISOString() : null,
+    last: times.length ? new Date(Math.max(...times)).toISOString() : null,
+  };
+}
+
+// The words for where a note leads: "Watch at 4:28", "Go to the question", "See it in the part" (a key point).
+export function noteLinkLabel(n: Note) {
+  if (n.video_at !== null) return `Watch at ${clock(n.video_at)}`;
+  if (!n.ref) return null;
+  if (/^r\d/.test(n.ref)) return "See it in the part";
+  return /-o\d/.test(n.ref) ? "Go to the open question" : "Go to the question";
+}
+
 // What a note is about, in words, from its ref: "Quiz question", "Open question" or "Key point".
 export function refLabel(ref: string | null) {
   if (!ref) return null;
@@ -111,4 +160,46 @@ export function noteDate(iso: string) {
   return Number.isNaN(d.getTime())
     ? ""
     : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Europe/Madrid" });
+}
+
+// "Part 3 · ABC step by step" for a part of a course, "Whole course" for a note without a part.
+export function partName(parts: { n: number; title: string }[], n: number | null) {
+  if (n === null) return "Whole course";
+  const t = parts.find((p) => p.n === n)?.title;
+  return t ? `Part ${n} · ${t}` : `Part ${n}`;
+}
+
+// "15–17 Oct" or "17 Oct": when the notes of a summary were written.
+export function writtenSpan(first: string | null, last: string | null) {
+  if (!first || !last) return "";
+  const a = noteDate(first);
+  const b = noteDate(last);
+  if (a === b) return a;
+  const [da, ma] = a.split(" ");
+  const [db, mb] = b.split(" ");
+  return ma === mb ? `${da}–${db} ${mb}` : `${a} – ${b}`;
+}
+
+// The summary as plain text, for "Copy as text".
+export function summaryText(title: string, parts: { n: number; title: string }[], s: ReturnType<typeof summarize>) {
+  const where = (n: Note) => [n.part === null ? "whole course" : `Part ${n.part}`, n.video_at !== null ? clock(n.video_at) : null].filter(Boolean).join(", ");
+  const lines = [`${title}: summary of your notes`, ""];
+  if (s.questions.length) {
+    lines.push("Questions to clear up");
+    s.questions.forEach((n, i) => lines.push(`${i + 1}. ${n.body} (${where(n)})`));
+    lines.push("");
+  }
+  if (s.keyPoints.length) {
+    lines.push("Key points you saved");
+    s.keyPoints.forEach((n) => lines.push(`- ${n.body} (${where(n)})`));
+    lines.push("");
+  }
+  if (s.parts.length) {
+    lines.push("Your notes, part by part");
+    for (const g of s.parts) {
+      lines.push(partName(parts, g.part));
+      g.notes.forEach((n) => lines.push(`- ${n.video_at !== null ? `${clock(n.video_at)} ` : ""}${n.body}`));
+    }
+  }
+  return lines.join("\n").trim();
 }

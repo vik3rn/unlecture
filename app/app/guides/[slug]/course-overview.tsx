@@ -93,7 +93,7 @@ export function CourseOverview({
         </p>
       )}
       <main id="main" className="page wide">
-        <Link href={guest ? "/" : "/app"} className="up">
+        <Link href={guest ? "/" : "/app/guides"} className="up">
           {guest ? "← Home" : "← All guides"}
         </Link>
 

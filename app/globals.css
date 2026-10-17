@@ -90,6 +90,26 @@ body {
     @apply inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 font-medium text-muted transition-colors hover:bg-accent-soft hover:text-ink;
   }
 
+  /* My guides | My notes in the site header: tabs with a blue underline on the current one. On a phone they take
+     a row of their own under the logo. */
+  .main-nav {
+    @apply flex self-stretch gap-1;
+  }
+  .main-nav a {
+    @apply flex min-h-16 items-center border-b-3 border-transparent px-3.5 font-semibold text-muted transition-colors hover:text-ink;
+  }
+  .main-nav a[aria-current="page"] {
+    @apply border-accent text-ink;
+  }
+  @media (max-width: 640px) {
+    .main-nav {
+      @apply order-last w-full;
+    }
+    .main-nav a {
+      @apply min-h-12 flex-1 justify-center;
+    }
+  }
+
   .skip-link {
     @apply sr-only;
   }

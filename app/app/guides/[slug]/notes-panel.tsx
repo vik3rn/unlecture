@@ -230,7 +230,7 @@ export function NotesPanel() {
                   </option>
                 ))}
                 {videoAt !== null && <option value="video">Video at {clock(videoAt)}</option>}
-                <option value="general">General</option>
+                <option value="general">This part in general</option>
               </select>
             </label>
           ) : (
@@ -300,7 +300,7 @@ export function NotesPanel() {
           <Link href={`/app/notes/print?guide=${n.guideId}`} target="_blank" className="np-export">
             Export course notes as PDF
           </Link>
-          <Link href="/app#notes">All my notes</Link>
+          <Link href="/app">All my notes</Link>
         </div>
       </aside>
     </>
