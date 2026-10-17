@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LogoMark } from "@/app/components/logo";
-import { LETTERS, mmss, openKeys, plain, questionKeys, type GuideFormat, type GuidePart, type GuideQuestion } from "@/lib/guides";
+import { LETTERS, mmss, openKeys, plain, quizItems, type GuideFormat, type GuidePart, type GuideQuestion } from "@/lib/guides";
+import { clock, NOTE_MAX } from "@/lib/notes";
 import { fmtPoints, pointsWord, quizRule, round3, scoringRule, tallyPicks } from "@/lib/scoring";
 import { OpenPractice, SingleQuiz } from "./answers";
+import { useNotes } from "./notes-context";
 import { useGuide } from "./progress";
 import { Html } from "./ui";
 
@@ -38,8 +40,30 @@ function reachable(url: string) {
   });
 }
 
-export function PartContent({ part, format }: { part: GuidePart; format: GuideFormat }) {
+// The length of a part as written in the guide ("12:34", "1:02:03" or "14 min"), for the note marks until the
+// video reports its own length.
+function seconds(dur: string) {
+  const c = /^(\d+):(\d{2})(?::(\d{2}))?$/.exec(dur.trim());
+  if (c) return c[3] ? +c[1] * 3600 + +c[2] * 60 + +c[3] : +c[1] * 60 + +c[2];
+  const m = /(\d+)\s*min/i.exec(dur);
+  return m ? +m[1] * 60 : null;
+}
+
+const typing = (t: EventTarget | null) =>
+  t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+
+export function PartContent({
+  part,
+  format,
+  startAt = null,
+}: {
+  part: GuidePart;
+  format: GuideFormat;
+  startAt?: number | null; // ?t= from a note on /app: play from there
+}) {
   const { slug, progress, update, rev } = useGuide();
+  const notes = useNotes();
+  const { registerPlayer } = notes;
   const frame = useRef<HTMLIFrameElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -52,6 +76,11 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
   const onStream = useRef(false);
   const stall = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [chapter, setChapter] = useState(-1);
+  const [dur, setDur] = useState<number | null>(() => seconds(part.dur));
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const ytTime = useRef<number | null>(null);
+  const ytPlaying = useRef(false);
+  const noteHereRef = useRef<() => void>(() => {});
   const useFile = !!part.file && !fileFailed;
   const hasVideo = useFile || !!part.yt;
   // The part has a video file but it would not load (often a school or work network that blocks the video
@@ -174,6 +203,53 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
 
   useEffect(() => () => clearStall(), []);
 
+  const pausePlayer = () => {
+    if (video.current) video.current.pause();
+    else send("pauseVideo");
+  };
+  const playerTime = () => (video.current && videoSrc ? video.current.currentTime : src ? ytTime.current : null);
+
+  // "+ Note" on the video and the N key: pause, and open the composer at this moment. Saving plays on.
+  const noteHere = () => {
+    const t = playerTime();
+    const playing = video.current ? !video.current.paused : !!src && ytPlaying.current;
+    if (playing) pausePlayer();
+    notes.openCompose({
+      kind: "note",
+      source: t !== null ? "video" : "general",
+      videoAt: t !== null ? Math.floor(t) : null,
+      resume: playing,
+    });
+  };
+
+  // The notes panel reaches the player through this (jump to a note, pause while writing, read the time). Set
+  // after every render so it always uses the current video.
+  useEffect(() => {
+    noteHereRef.current = noteHere;
+    registerPlayer({
+      seek: (t) => void seek(t),
+      pause: pausePlayer,
+      play: () => {
+        if (video.current) void video.current.play().catch(() => {});
+        else send("playVideo");
+      },
+      time: playerTime,
+    });
+  });
+  useEffect(() => () => registerPlayer(null), [registerPlayer]);
+
+  // N writes a note (not while typing in a field). A YouTube video keeps the keys while it has focus.
+  useEffect(() => {
+    if (!notes.enabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== "n" && e.key !== "N") || e.metaKey || e.ctrlKey || e.altKey || e.repeat || typing(e.target)) return;
+      e.preventDefault();
+      noteHereRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [notes.enabled]);
+
   // Next 16 (cacheComponents) keeps recently visited pages in React <Activity> (display: none) instead of
   // unmounting them, and hidden media keeps playing. Pause on hide; the position is kept because the DOM node stays.
   useLayoutEffect(() => {
@@ -196,22 +272,21 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
       } catch {
         return;
       }
-      const info = (data as { info?: { currentTime?: unknown; playerState?: unknown } } | null)?.info;
+      const info = (data as { info?: { currentTime?: unknown; playerState?: unknown; duration?: unknown } } | null)?.info;
       if (!info || typeof info !== "object") return;
-      if (typeof info.currentTime === "number") followChapter(info.currentTime);
+      if (typeof info.currentTime === "number") {
+        ytTime.current = info.currentTime;
+        followChapter(info.currentTime);
+      }
+      if (typeof info.duration === "number" && info.duration > 0) setDur(info.duration);
+      if (typeof info.playerState === "number") ytPlaying.current = info.playerState === 1;
       if (info.playerState === 0) setDone();
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [src, followChapter, setDone]);
 
-  const qs = questionKeys(part).map(({ q, key }, i) => {
-    const mock = /^(Q\d+)\.\s*/.exec(q.stem);
-    const nDrills = part.drills.length;
-    const label =
-      i < nDrills ? (mock ? `Mock exam · ${mock[1]}` : `From the video · ${i + 1}`) : `New question · ${i - nDrills + 1}`;
-    return { q, key, label };
-  });
+  const qs = quizItems(part);
   // One correct option: single-answer questions scored under the exam's rules (progress.pick). Otherwise the
   // pick-n-of-m quiz (progress.quiz), as in the DAE guide.
   const single = format.correct === 1;
@@ -229,6 +304,16 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
     }
   }
 
+  // Notes (logged in only): a note about a question, a key point saved in one click, and the marks on the video.
+  const noteOn = (key: string) => (notes.enabled ? () => notes.openCompose({ kind: "note", source: "quiz", ref: key }) : null);
+  const saveKeyPoint = async (html: string, ref: string) => {
+    if (savingKey) return;
+    setSavingKey(ref);
+    await notes.add({ body: plain(html).slice(0, NOTE_MAX), kind: "note", source: "keypoint", ref });
+    setSavingKey(null);
+  };
+  const marks = notes.enabled && dur ? notes.notes.filter((x) => x.video_at !== null && x.video_at <= dur) : [];
+
   return (
     <>
       <div ref={box} className="vid">
@@ -243,6 +328,7 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
             aria-label={`Part ${part.n} video`}
             onLoadedMetadata={(e) => {
               clearStall();
+              if (Number.isFinite(e.currentTarget.duration) && e.currentTarget.duration > 0) setDur(e.currentTarget.duration);
               retried.current = false;
               // After a switch to the fallback the new file does not always start on its own.
               if (onStream.current && e.currentTarget.paused) void e.currentTarget.play().catch(() => {});
@@ -271,8 +357,8 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
           <button
             type="button"
             className="play"
-            onClick={() => seek(0)}
-            aria-label={`Play Part ${part.n}: ${plain(part.title)} (${part.dur})`}
+            onClick={() => seek(startAt ?? 0)}
+            aria-label={`Play Part ${part.n}: ${plain(part.title)} (${part.dur})${startAt ? ` from ${clock(startAt)}` : ""}`}
           >
             <span className="th-pill">
               Part {part.n} · <Html html={part.unit} />
@@ -281,8 +367,14 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
               <Html html={part.title} />
             </span>
             <span className="th-meta">
-              {part.dur}
-              {part.chapters.length > 1 && ` · ${part.chapters.length - 1} chapters`}
+              {startAt ? (
+                <>Play from {clock(startAt)} (your note)</>
+              ) : (
+                <>
+                  {part.dur}
+                  {part.chapters.length > 1 && ` · ${part.chapters.length - 1} chapters`}
+                </>
+              )}
             </span>
             <span className="circle" aria-hidden="true">
               ▶
@@ -306,6 +398,35 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
         )}
       </div>
 
+      {notes.enabled && hasVideo && (
+        <div className="vtools">
+          {marks.length > 0 && dur && (
+            <div className="vmarks" role="group" aria-label="Your notes in the video">
+              <span className="vm-track" aria-hidden="true" />
+              {marks.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={m.kind === "question" ? "vm ask" : "vm"}
+                  style={{ left: `${(100 * (m.video_at as number)) / dur}%` }}
+                  onClick={() => seek(m.video_at as number)}
+                  title={`${clock(m.video_at as number)} · ${m.body}`}
+                  aria-label={`${m.kind === "question" ? "Question" : "Note"} at ${clock(m.video_at as number)}: ${m.body.slice(0, 80)}`}
+                />
+              ))}
+            </div>
+          )}
+          <div className="vt-row">
+            <NoteHere onNote={noteHere} live={!!(videoSrc || src)} />
+            {notes.studyAvailable && (
+              <button type="button" className="vt-study" aria-pressed={notes.study} onClick={notes.toggleStudy}>
+                {notes.study ? "Exit study mode" : "Study mode"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {part.chapters.length > 0 && (
         <div className="chaps" aria-label="Chapters">
           {part.chapters.map(([t, name], i) => (
@@ -328,9 +449,25 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
         <section className="sec" aria-labelledby={`rem-${part.n}`}>
           <h2 id={`rem-${part.n}`}>Remember this</h2>
           <div className="remember">
-            {part.recaps.map((r) => (
-              <Html key={r} html={r} block className="rp" />
-            ))}
+            {part.recaps.map((r, i) => {
+              const ref = `r${i}`;
+              const saved = notes.notes.some((x) => x.ref === ref);
+              return (
+                <div key={r} className="rp-row">
+                  <Html html={r} block className="rp" />
+                  {notes.enabled && (
+                    <button
+                      type="button"
+                      className={saved ? "rp-save on" : "rp-save"}
+                      disabled={saved || savingKey === ref}
+                      onClick={() => saveKeyPoint(r, ref)}
+                    >
+                      {saved ? "✓ In your notes" : savingKey === ref ? "Saving…" : "+ Save to notes"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
@@ -362,7 +499,10 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
                 label={label}
                 format={format}
                 answer={progress.pick?.[key] ?? null}
-                onCheck={(a) => update((p) => ({ ...p, pick: { ...p.pick, [key]: a } }))}
+                onCheck={(a) => {
+                  update((p) => ({ ...p, pick: { ...p.pick, [key]: a } }));
+                  notes.setLastQuestion(key);
+                }}
                 onReset={() =>
                   update((p) => {
                     const pick = { ...p.pick };
@@ -371,15 +511,20 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
                   })
                 }
                 onWatch={q.at !== null && hasVideo ? () => seek(q.at as number) : null}
+                onNote={noteOn(key)}
               />
             ) : (
               <Quiz
                 key={key}
+                id={`q-${key}`}
                 q={q}
                 n={format.correct}
                 label={label}
                 picks={progress.quiz[key] ?? null}
-                onCheck={(picks) => update((p) => ({ ...p, quiz: { ...p.quiz, [key]: picks } }))}
+                onCheck={(picks) => {
+                  update((p) => ({ ...p, quiz: { ...p.quiz, [key]: picks } }));
+                  notes.setLastQuestion(key);
+                }}
                 onReset={() =>
                   update((p) => {
                     const quiz = { ...p.quiz };
@@ -388,6 +533,7 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
                   })
                 }
                 onWatch={q.at !== null && hasVideo ? () => seek(q.at as number) : null}
+                onNote={noteOn(key)}
               />
             ),
           )}
@@ -424,7 +570,11 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
                   return { ...p, open };
                 })
               }
-              onGrade={(g) => update((p) => ({ ...p, grade: { ...p.grade, [key]: g } }))}
+              onGrade={(g) => {
+                update((p) => ({ ...p, grade: { ...p.grade, [key]: g } }));
+                notes.setLastQuestion(key);
+              }}
+              onNote={noteOn(key)}
             />
           ))}
         </section>
@@ -461,6 +611,7 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
 
 // Pick n of the options (DAE: two of six), check, and see which were right.
 function Quiz({
+  id,
   q,
   n,
   label,
@@ -468,7 +619,9 @@ function Quiz({
   onCheck,
   onReset,
   onWatch,
+  onNote,
 }: {
+  id: string;
   q: GuideQuestion;
   n: number; // options to pick
   label: string;
@@ -476,6 +629,7 @@ function Quiz({
   onCheck: (picks: string[]) => void;
   onReset: () => void;
   onWatch: (() => void) | null;
+  onNote: (() => void) | null;
 }) {
   const [sel, setSel] = useState<string[]>([]);
   const checked = picks !== null;
@@ -492,9 +646,14 @@ function Quiz({
       <div className="qh">
         <span className={`src ${q.src}`}>{q.src === "video" ? "Video drill" : "New"}</span>
         {label}
+        {onNote && (
+          <button type="button" className="qn" onClick={onNote}>
+            + Note on this question
+          </button>
+        )}
       </div>
       {q.ctx && <Html html={q.ctx} block className="ctx" />}
-      <Html html={q.stem.replace(/^Q\d+\.\s*/, "")} block className="stem" />
+      <Html id={`${id}-stem`} html={q.stem.replace(/^Q\d+\.\s*/, "")} block className="stem" />
       <div className="opts">
         {q.opts.map((o, i) => {
           const letter = LETTERS[i];
@@ -543,5 +702,27 @@ function Quiz({
       </div>
       {checked && q.expl && <Html html={q.expl} block className="expl" />}
     </div>
+  );
+}
+
+// "+ Note at 4:12": the time follows the video (read twice a second here, so the rest of the guide does not
+// re-render while it plays).
+function NoteHere({ onNote, live }: { onNote: () => void; live: boolean }) {
+  const { player } = useNotes();
+  const [t, setT] = useState<number | null>(null);
+  useEffect(() => {
+    if (!live) return;
+    const id = setInterval(() => {
+      const now = player()?.time();
+      setT(typeof now === "number" ? Math.floor(now) : null);
+    }, 500);
+    return () => clearInterval(id);
+  }, [live, player]);
+  const at = live ? t : null;
+  return (
+    <button type="button" className="vt-note" onClick={onNote} aria-keyshortcuts="N">
+      + Note{at !== null ? ` at ${clock(at)}` : ""}
+      <kbd aria-hidden="true">N</kbd>
+    </button>
   );
 }

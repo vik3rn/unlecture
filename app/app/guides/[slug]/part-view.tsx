@@ -2,21 +2,16 @@
 
 import Link from "next/link";
 import { plain, type GuideFormat, type GuidePart } from "@/lib/guides";
+import type { Note } from "@/lib/notes";
+import { NotesProvider, useNotes } from "./notes-context";
+import { NotesPanel } from "./notes-panel";
 import { PartContent } from "./part-content";
 import { saveFailed, saveLabel, useGuide } from "./progress";
 import { Html } from "./ui";
 
 export type PartLink = { n: number; title: string; locked: boolean } | null;
 
-export function PartView({
-  part,
-  prev,
-  next,
-  total,
-  last,
-  brand,
-  format,
-}: {
+type PartViewProps = {
   part: GuidePart;
   prev: PartLink;
   next: PartLink;
@@ -24,8 +19,27 @@ export function PartView({
   last: number; // number of the last part (parts may start at 0)
   brand: string;
   format: GuideFormat;
-}) {
+  // Logged in only: the guide's id and the student's notes for this part (the free preview has no notes).
+  notes?: { guideId: string; items: Note[] };
+  startAt?: number | null; // ?t= from a note: the video starts there
+};
+
+export function PartView(props: PartViewProps) {
+  return (
+    <NotesProvider
+      enabled={!!props.notes}
+      guideId={props.notes?.guideId ?? ""}
+      part={props.part}
+      initial={props.notes?.items ?? []}
+    >
+      <PartBody {...props} />
+    </NotesProvider>
+  );
+}
+
+function PartBody({ part, prev, next, total, last, brand, format, startAt }: PartViewProps) {
   const { base, guest, progress, update, saveState } = useGuide();
+  const { setRoot, enabled: withNotes, study } = useNotes();
   const done = !!progress.done[part.n];
   const doneCount = Object.keys(progress.done).length;
   const questions = part.drills.length + part.mcs.length;
@@ -94,6 +108,7 @@ export function PartView({
         </p>
       )}
 
+      <div ref={setRoot} className={`pv${withNotes ? " with-notes" : ""}${study ? " study" : ""}`}>
       <main id="main" className="page">
         <p className="eyebrow">
           Part {part.n} · <Html html={part.unit} />
@@ -109,7 +124,7 @@ export function PartView({
           {part.opens.length > 0 && ` · ${part.opens.length} open ${part.opens.length === 1 ? "question" : "questions"}`}
         </p>
 
-        <PartContent part={part} format={format} />
+        <PartContent part={part} format={format} startAt={startAt} />
 
         <div className="finish">
           <button type="button" className={`done-btn${done ? " on" : ""}`} aria-pressed={done} onClick={toggleDone}>
@@ -123,6 +138,8 @@ export function PartView({
           {navLink(next, "next")}
         </nav>
       </main>
+      <NotesPanel />
+      </div>
     </div>
   );
 }

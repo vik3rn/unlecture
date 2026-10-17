@@ -116,6 +116,7 @@ export function SingleQuiz({
   onCheck,
   onReset,
   onWatch,
+  onNote = null,
 }: {
   id: string;
   q: GuideQuestion;
@@ -125,6 +126,7 @@ export function SingleQuiz({
   onCheck: (answer: string) => void;
   onReset: () => void;
   onWatch: (() => void) | null;
+  onNote?: (() => void) | null; // opens the notes panel with this question chosen (logged in only)
 }) {
   const [sel, setSel] = useState("");
   const checked = answer !== null;
@@ -135,6 +137,11 @@ export function SingleQuiz({
       <div className="qh">
         <span className={`src ${q.src}`}>{q.src === "video" ? "Video drill" : "New"}</span>
         {label}
+        {onNote && (
+          <button type="button" className="qn" onClick={onNote}>
+            + Note on this question
+          </button>
+        )}
       </div>
       {q.ctx && <Html html={q.ctx} block className="ctx" />}
       <Html id={stemId} html={q.stem.replace(/^Q\d+\.\s*/, "")} block className="stem" />
@@ -358,6 +365,7 @@ export function OpenPractice({
   grade,
   onText,
   onGrade,
+  onNote = null,
 }: {
   id: string;
   q: GuideOpen;
@@ -366,6 +374,7 @@ export function OpenPractice({
   grade: number | undefined;
   onText: (text: string) => void;
   onGrade: (grade: number) => void;
+  onNote?: (() => void) | null;
 }) {
   const [draft, change, flush] = useDraft(value, onText);
   const [open, setOpen] = useState(grade !== undefined);
@@ -377,6 +386,11 @@ export function OpenPractice({
         <span className={`src ${q.src}`}>{q.src === "video" ? "Video drill" : "Paper"}</span>
         Open question · {n}
         <span className="pts">{pointsWord(q.points)}</span>
+        {onNote && (
+          <button type="button" className="qn" onClick={onNote}>
+            + Note on this question
+          </button>
+        )}
       </div>
       {q.ctx && <Html html={q.ctx} block className="ctx" />}
       <Html id={stemId} html={q.stem} block className="stem" />

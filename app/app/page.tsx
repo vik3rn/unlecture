@@ -4,15 +4,16 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { dayIn, dayStart, formatDuration } from "@/lib/guide-time";
 import { examInstant, formatExam, type ExamSetting } from "@/lib/guides";
+import { NOTE_COLUMNS, type Note } from "@/lib/notes";
 import { createClient } from "@/lib/supabase/server";
+import { NotesOverview } from "./notes-overview";
 import "./my-guides.css";
 
 // /app, "Your guides": a card per guide (progress squares, the next part to study, the student's own exam date),
-// a strip with this week's study time, parts done and the next exam, and the announced Management Control guide.
+// a strip with this week's study time, parts done and the next exam, the announced Management Control guide, and
+// "Your notes for the exam" (the main feature: core-input, core-submit, core-item; notes-overview.tsx).
 // Light data only: the guide rows plus `content->outline` / `content->tags` / `content->>mark` (small, written by
 // the seed), never the whole guide content. Styles in my-guides.css, scoped to .mg, as wide as the header (1440 px).
-// TEMPORARY until after Fri 16 Oct 2026: the study list (core-input, core-submit, core-item) is hidden (see
-// CLAUDE.md). Bring it back as a "Need a guide for another course?" panel at the bottom (code removed in cffeb04).
 
 export const metadata: Metadata = { title: "Your guides" };
 
@@ -76,18 +77,25 @@ async function Guides() {
   const { data: auth } = await supabase.auth.getClaims();
   if (!auth?.claims?.sub) redirect("/login");
 
-  // RLS: every logged-in user can read guides; progress and study-time rows are the user's own.
-  const [guidesResult, progressResult, timeResult] = await Promise.all([
+  // RLS: every logged-in user can read guides; progress, study-time and note rows are the user's own.
+  const [guidesResult, progressResult, timeResult, notesResult] = await Promise.all([
     supabase
       .from("guides")
       .select("id, slug, title, summary, part_count, outline:content->outline, tags:content->tags, mark:content->>mark")
       .order("created_at", { ascending: true }),
     supabase.from("guide_progress").select("guide_id, done:progress->done, exam:progress->exam"),
     supabase.from("guide_time").select("seconds").gte("day", weekStart()),
+    supabase.from("notes").select(NOTE_COLUMNS).order("created_at", { ascending: false }).limit(1000),
   ]);
 
+  // Notes keep working when the guides cannot be loaded.
   if (guidesResult.error) {
-    return <div className="mg-empty">The guides could not be loaded right now. Please try again in a moment.</div>;
+    return (
+      <>
+        <div className="mg-empty">The guides could not be loaded right now. Please try again in a moment.</div>
+        <NotesOverview initial={(notesResult.data ?? []) as Note[]} guides={[]} failed={!!notesResult.error} />
+      </>
+    );
   }
 
   const guides = (guidesResult.data ?? []) as Guide[];
@@ -106,6 +114,12 @@ async function Guides() {
     .sort((a, b) => a - b);
   const nextExam = upcoming.length ? untilText(upcoming[0]) : null;
   const mcLive = guides.some((g) => g.slug.startsWith("management-control"));
+  const noteGuides = guides.map((g) => ({
+    id: g.id,
+    slug: g.slug,
+    title: g.title,
+    parts: safeOutline(g.outline).map(({ n, title }) => ({ n, title })),
+  }));
 
   return (
     <>
@@ -270,6 +284,12 @@ async function Guides() {
           <p>It appears here when it is published. Your progress starts the moment you open it.</p>
         </article>
       )}
+
+      <NotesOverview
+        initial={(notesResult.data ?? []) as Note[]}
+        guides={noteGuides}
+        failed={!!notesResult.error}
+      />
     </>
   );
 }
@@ -280,7 +300,10 @@ export default function AppPage() {
       <div className="mg-wrap">
         <div className="mg-top">
           <h1>Your guides</h1>
-          <p>Pick up where you left off. Your parts, answers, score and exam date are saved to your account.</p>
+          <p>
+            Pick up where you left off. Your parts, answers, score, exam date and <a href="#notes">notes</a> are saved
+            to your account.
+          </p>
         </div>
         <Suspense fallback={<p className="mg-loading">Loading your guides…</p>}>
           <Guides />

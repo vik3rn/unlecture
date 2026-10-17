@@ -36,8 +36,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         <footer className="border-t border-line">
           <div className="mx-auto w-full max-w-[1440px] px-[clamp(20px,4vw,72px)] py-6 text-sm text-muted">
-            Unlecture is a student project and is not an official IE University product. Privacy: we store your email
-            and your study progress to run the app, and the project owner can see them to improve the guides. We also
+            Unlecture is a student project and is not an official IE University product. Privacy: we store your email,
+            your study progress and the notes you write to run the app. Your notes are private to your account. The
+            project owner can see your email and progress to improve the guides. We also
             store how long you study each day, per part (only the date, the part and the time), to show your progress
             and improve the guides. Page visits are counted anonymously with Vercel Web Analytics (no cookies).
           </div>
