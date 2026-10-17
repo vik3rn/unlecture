@@ -5,8 +5,9 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import "./landing.css";
 
 // Public landing page (grading contract in CLAUDE.md): what Unlecture does, who it is for, and ONE sign-up button
-// to /signup. Logged-in students get "Go to my guides" there instead. The first screen puts the courses up front:
-// a course list next to examples from the guides that flip every 5 seconds (app/components/landing-examples.tsx).
+// to /signup. Logged-in students get "Go to my guides" there instead. The button sits right under the intro, above
+// the course list, so it is on the first screen on a phone and on a laptop. Next to it: examples from the guides that
+// flip every 5 seconds (app/components/landing-examples.tsx).
 // "Your notes become your summary" explains the main feature (notes, /app) with a small summary preview.
 // Styles live in landing.css, scoped to .lp, and the page fills wide screens (max 1440 px). Only the parts that
 // depend on the login stream in (Suspense); the rest is static. No fixed exam date: students from several classes
@@ -94,6 +95,10 @@ export default function Home() {
               points, exam-style quizzes and paper exercises.
             </p>
 
+            <Suspense fallback={<SignupCta />}>
+              <HeroCta />
+            </Suspense>
+
             <div className="courses" id="courses">
               <h2 className="eyebrow">Choose your course</h2>
               <article className="course">
@@ -132,9 +137,6 @@ export default function Home() {
               </article>
             </div>
 
-            <Suspense fallback={<SignupCta />}>
-              <HeroCta />
-            </Suspense>
           </div>
           <LandingExamples />
         </div>
