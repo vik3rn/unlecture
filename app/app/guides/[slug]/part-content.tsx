@@ -12,6 +12,13 @@ import { Html } from "./ui";
 // as a YouTube embed. Nothing is loaded from YouTube until the student presses play.
 const YT_ORIGIN = "https://www.youtube-nocookie.com";
 
+// When the direct R2 link fails or shows nothing for a few seconds (Spanish ISPs block Cloudflare addresses during
+// LaLiga matches), the player switches to /api/video/stream on our own domain, which fetches the same file from R2
+// on the server. Once that was needed, later parts in this visit start there straight away.
+const STALL_MS = 7000;
+let preferStream = false;
+type VideoLink = { url: string; stream: string | null };
+
 export function PartContent({ part, format }: { part: GuidePart; format: GuideFormat }) {
   const { slug, progress, update, rev } = useGuide();
   const frame = useRef<HTMLIFrameElement>(null);
@@ -22,6 +29,9 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
   const [fileFailed, setFileFailed] = useState(false);
   const pendingSeek = useRef<number | null>(null);
   const retried = useRef(false);
+  const link = useRef<VideoLink | null>(null);
+  const onStream = useRef(false);
+  const stall = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [chapter, setChapter] = useState(-1);
   const useFile = !!part.file && !fileFailed;
   const hasVideo = useFile || !!part.yt;
@@ -55,16 +65,45 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
     setSrc(`${YT_ORIGIN}/embed/${part.yt}?enablejsapi=1&rel=0&playsinline=1&autoplay=1&start=${Math.floor(t)}&origin=${origin}`);
   };
 
-  // Asks the server for a fresh link to this part's video (checks login / free preview).
-  const getLink = async () => {
+  // Asks the server for a fresh link to this part's video (checks login / free preview), with the fallback link.
+  const getLink = async (): Promise<VideoLink | null> => {
     try {
       const r = await fetch(`/api/video?guide=${encodeURIComponent(slug)}&part=${part.n}`, { cache: "no-store" });
       if (!r.ok) return null;
-      const { url } = (await r.json()) as { url?: unknown };
-      return typeof url === "string" && url.startsWith("https://") ? url : null;
+      const { url, stream } = (await r.json()) as { url?: unknown; stream?: unknown };
+      if (typeof url !== "string" || !url.startsWith("https://")) return null;
+      return { url, stream: typeof stream === "string" && stream.startsWith("/api/video/stream?") ? stream : null };
     } catch {
       return null;
     }
+  };
+
+  const clearStall = () => {
+    if (stall.current) clearTimeout(stall.current);
+    stall.current = null;
+  };
+
+  // Plays from our own domain instead of R2, from the same spot. False when there is no fallback or it is in use.
+  const switchToStream = () => {
+    clearStall();
+    const s = link.current?.stream;
+    if (!s || onStream.current) return false;
+    preferStream = true;
+    onStream.current = true;
+    if (video.current && video.current.currentTime > 0) pendingSeek.current = video.current.currentTime;
+    setVideoSrc(s);
+    return true;
+  };
+
+  // Starts a link: the direct R2 file, watched for a stall, or the fallback when R2 was blocked earlier.
+  const play = (l: VideoLink, at: number | null) => {
+    link.current = l;
+    pendingSeek.current = at;
+    const viaStream = preferStream && !!l.stream;
+    onStream.current = viaStream;
+    clearStall();
+    setVideoSrc(viaStream ? l.stream : l.url);
+    if (!viaStream && l.stream) stall.current = setTimeout(switchToStream, STALL_MS);
   };
 
   const seek = async (t: number) => {
@@ -77,9 +116,8 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
         void v.play().catch(() => {});
         return;
       }
-      pendingSeek.current = t;
-      const url = await getLink();
-      if (url) return setVideoSrc(url);
+      const l = await getLink();
+      if (l) return play(l, t);
       setFileFailed(true); // no link: use YouTube instead if this part has it
       return startYouTube(t);
     }
@@ -88,17 +126,16 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
     send("playVideo");
   };
 
-  // The link expired or the file failed: get a new link once and carry on from the same spot.
+  // The file failed: try our own domain first, then a new link once, from the same spot.
   const onVideoError = async () => {
+    if (switchToStream()) return;
     const at = video.current?.currentTime ?? 0;
     if (!retried.current) {
       retried.current = true;
-      const url = await getLink();
-      if (url) {
-        pendingSeek.current = at;
-        return setVideoSrc(url);
-      }
+      const l = await getLink();
+      if (l) return play(l, at);
     }
+    clearStall();
     setVideoSrc(null);
     setFileFailed(true);
   };
@@ -106,11 +143,13 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
   // "Try again" after a failed load: a fresh link, and the player comes back if it works.
   const retry = async () => {
     retried.current = false;
-    const url = await getLink();
-    if (!url) return;
+    const l = await getLink();
+    if (!l) return;
     setFileFailed(false);
-    setVideoSrc(url);
+    play(l, null);
   };
+
+  useEffect(() => () => clearStall(), []);
 
   // Next 16 (cacheComponents) keeps recently visited pages in React <Activity> (display: none) instead of
   // unmounting them, and hidden media keeps playing. Pause on hide; the position is kept because the DOM node stays.
@@ -180,6 +219,7 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
             preload="metadata"
             aria-label={`Part ${part.n} video`}
             onLoadedMetadata={(e) => {
+              clearStall();
               retried.current = false;
               if (pendingSeek.current) e.currentTarget.currentTime = pendingSeek.current;
               pendingSeek.current = null;

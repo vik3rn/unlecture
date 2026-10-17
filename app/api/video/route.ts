@@ -1,10 +1,11 @@
 import type { NextRequest } from "next/server";
 import { parseGuideContent, previewContent } from "@/lib/guides";
-import { presignGet } from "@/lib/r2";
+import { presignGet, signStreamToken } from "@/lib/r2";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-// GET /api/video?guide=<slug>&part=<n> → { url } : a 6-hour link to that part's video in the private R2 bucket.
+// GET /api/video?guide=<slug>&part=<n> → { url, stream } : a 6-hour link to that part's video in the private R2
+// bucket, and a fallback link through our own domain (/api/video/stream) for networks that block R2.
 // Logged-in users get any part of a guide they can read (RLS decides). Visitors without an account only get
 // the parts that are open in the free preview. The video itself streams from R2, never through this route.
 const SLUG = /^[a-z0-9-]{1,60}$/;
@@ -37,5 +38,6 @@ export async function GET(request: NextRequest) {
 
   const url = presignGet(file, LINK_SECONDS);
   if (!url) return json({ error: "Video storage is not set up." }, 503);
-  return json({ url });
+  const token = signStreamToken(file, LINK_SECONDS);
+  return json({ url, stream: token ? `/api/video/stream?t=${encodeURIComponent(token)}` : null });
 }

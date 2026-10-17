@@ -1,10 +1,11 @@
 import "server-only";
-import { createHash, createHmac } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 // Short-lived download links for videos in a private Cloudflare R2 bucket (S3 API, AWS Signature V4 query
 // signing, written out here so the app needs no AWS SDK). The browser plays the file straight from R2 with
-// normal range requests, so video bytes never pass through Vercel. Keys live only in Vercel's environment
-// variables: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.
+// normal range requests, so video bytes normally never pass through Vercel (the blocked-network fallback at the
+// bottom is the exception). Keys live only in Vercel's environment variables: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
+// R2_SECRET_ACCESS_KEY, R2_BUCKET.
 
 const enc = (s: string) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 const sha256 = (s: string) => createHash("sha256").update(s, "utf8").digest("hex");
@@ -51,4 +52,39 @@ export function presignGet(key: string, seconds: number, now = new Date()): stri
     seconds,
     now,
   });
+}
+
+// Some Spanish ISPs block Cloudflare addresses during LaLiga matches (a court order against piracy), the R2
+// download endpoint included. Then the player falls back to /api/video/stream, which fetches the same file from
+// R2 on the server and streams it in chunks from our own domain. The fallback link carries a signed token (the
+// object key and an expiry, HMAC with a key derived from R2_SECRET_ACCESS_KEY), so it can only serve the one
+// video the visitor was allowed to watch, until the token expires.
+const tokenKey = () => {
+  const s = process.env.R2_SECRET_ACCESS_KEY;
+  return s ? hmac(s, "unlecture-video-stream-v1") : null;
+};
+const b64 = (b: Buffer) => b.toString("base64url");
+
+export function signStreamToken(key: string, seconds: number, now = Date.now()): string | null {
+  const k = tokenKey();
+  if (!k) return null;
+  const body = b64(Buffer.from(JSON.stringify({ k: key, e: Math.floor(now / 1000) + Math.floor(seconds) }), "utf8"));
+  return `${body}.${b64(createHmac("sha256", k).update(body).digest())}`;
+}
+
+// The object key inside a valid, unexpired token, or null.
+export function verifyStreamToken(token: string, now = Date.now()): string | null {
+  const k = tokenKey();
+  const [body, sig] = token.split(".");
+  if (!k || !body || !sig || token.length > 2000) return null;
+  const want = createHmac("sha256", k).update(body).digest();
+  const got = Buffer.from(sig, "base64url");
+  if (got.length !== want.length || !timingSafeEqual(got, want)) return null;
+  try {
+    const { k: key, e } = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as { k?: unknown; e?: unknown };
+    if (typeof key !== "string" || typeof e !== "number" || e * 1000 < now) return null;
+    return key;
+  } catch {
+    return null;
+  }
 }
