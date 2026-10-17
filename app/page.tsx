@@ -87,7 +87,7 @@ export default function Home() {
       <section className="hero" aria-labelledby="lp-title">
         <div className="wrap hero-grid">
           <div className="intro">
-            <p className="pill">For IE University students with an exam coming up</p>
+            <p className="pill">For IE BBA 3rd-year students with an exam coming up</p>
             <h1 id="lp-title">Exam guides for IE students</h1>
             <p className="lede">
               Each guide takes you through a course step by step before the exam: short videos on the page, the key
