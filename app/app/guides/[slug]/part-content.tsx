@@ -25,6 +25,9 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
   const [chapter, setChapter] = useState(-1);
   const useFile = !!part.file && !fileFailed;
   const hasVideo = useFile || !!part.yt;
+  // The part has a video file but it would not load (often a school or work network that blocks the video
+  // storage) and there is no YouTube copy to fall back on.
+  const failed = !!part.file && fileFailed && !part.yt;
 
   const setDone = useCallback(
     () =>
@@ -98,6 +101,15 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
     }
     setVideoSrc(null);
     setFileFailed(true);
+  };
+
+  // "Try again" after a failed load: a fresh link, and the player comes back if it works.
+  const retry = async () => {
+    retried.current = false;
+    const url = await getLink();
+    if (!url) return;
+    setFileFailed(false);
+    setVideoSrc(url);
   };
 
   // Next 16 (cacheComponents) keeps recently visited pages in React <Activity> (display: none) instead of
@@ -214,6 +226,16 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
               <LogoMark size={22} /> Unlecture
             </span>
           </button>
+        ) : failed ? (
+          <div className="soon failed" role="alert">
+            <p>
+              <b>The video could not load.</b> Some school and work networks block our video storage. Try mobile data
+              or another Wi-Fi, then press Try again.
+            </p>
+            <button type="button" className="btn" onClick={retry}>
+              Try again
+            </button>
+          </div>
         ) : (
           <div className="soon">Video coming soon</div>
         )}

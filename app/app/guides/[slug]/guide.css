@@ -156,6 +156,8 @@
 .dg .vid .play:hover .circle, .dg .vid .play:focus-visible .circle { background: #3a68dd; transform: scale(1.06); }
 .dg .vid .th-brand { position: absolute; left: 6.5cqw; bottom: 5.5cqw; display: inline-flex; align-items: center; gap: 8px; font: 600 max(12px, 1.9cqw)/1 var(--sans); color: #eef1f6; }
 .dg .vid .soon { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #131826; color: #e8ebf2; font-size: 15px; text-align: center; }
+.dg .vid .soon.failed { place-content: center; gap: 14px; }
+.dg .vid .soon.failed p { max-width: 34em; margin: 0; line-height: 1.5; }
 @container (max-width: 420px) {
   .dg .vid .th-meta { bottom: 16cqw; }
   .dg .vid .th-title { top: 17cqw; right: 30cqw; -webkit-line-clamp: 2; }
