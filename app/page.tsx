@@ -66,7 +66,7 @@ async function HeroCta() {
 function PreviewLink({ slug }: { slug: string }) {
   return (
     <Link href={`/guides/${slug}`} className="c-link">
-      Free preview: Part 0
+      Preview Part 0 without signing up
     </Link>
   );
 }
