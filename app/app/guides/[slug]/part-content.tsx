@@ -647,8 +647,8 @@ function Quiz({
         <span className={`src ${q.src}`}>{q.src === "video" ? "Video drill" : "New"}</span>
         {label}
         {onNote && (
-          <button type="button" className="qn" onClick={onNote}>
-            + Note on this question
+          <button type="button" className="qn" onClick={onNote} aria-label="Add a note on this question">
+            + Note<span className="qn-more"> on this question</span>
           </button>
         )}
       </div>

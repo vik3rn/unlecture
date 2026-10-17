@@ -316,15 +316,13 @@ export const questionKeys = (p: GuidePart) => [
   ...p.mcs.map((q, i) => ({ q, key: `${p.n}-p${i}` })),
 ];
 
-// The quiz of a part with the label each question has on the page: the mock exam number, a drill from the video,
-// or a new question. Shared by the quiz and the notes panel.
+// The quiz of a part with the label each question has on the page: its number in the part ("Question 3"), or the
+// mock exam number for a drill taken from a mock ("Mock exam · Q4"). The chip in front says where it comes from
+// (video drill or new). Shared by the quiz and the notes panel.
 export const quizItems = (p: GuidePart) =>
   questionKeys(p).map(({ q, key }, i) => {
-    const mock = /^(Q\d+)\.\s*/.exec(q.stem);
-    const nDrills = p.drills.length;
-    const label =
-      i < nDrills ? (mock ? `Mock exam · ${mock[1]}` : `From the video · ${i + 1}`) : `New question · ${i - nDrills + 1}`;
-    return { q, key, label };
+    const mock = i < p.drills.length ? /^(Q\d+)\.\s*/.exec(q.stem) : null;
+    return { q, key, label: mock ? `Mock exam · ${mock[1]}` : `Question ${i + 1}` };
   });
 
 // Stable key per open question of a part (progress.open and progress.grade).

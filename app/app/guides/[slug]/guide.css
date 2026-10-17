@@ -376,6 +376,7 @@
   font-size: 13px; font-weight: 600; cursor: pointer; }
 .dg .q .qh .pts + .qn { margin-left: 0; }
 .dg .q .qh .qn:hover { border-color: var(--accent); }
+@media (max-width: 600px) { .dg .q .qh .qn-more { display: none; } }
 
 .dg .np { box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; padding: 16px; overflow: hidden; border: 1px solid var(--line); border-radius: 16px;
   background: var(--card); box-shadow: var(--shadow); }
