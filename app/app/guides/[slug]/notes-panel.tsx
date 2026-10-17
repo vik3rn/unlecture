@@ -7,15 +7,18 @@ import { useNotes } from "./notes-context";
 import { useGuide } from "./progress";
 
 type Filter = "all" | "note" | "question";
+type Scope = "part" | "course";
 
-// The notes panel of a guide part: every note of the course (this part first, then the other parts in order;
-// newest first inside a part; filter by kind), and the composer. On wide screens it stays beside the video and the
-// quiz; on phones it opens from the "Notes" button as a bottom sheet; in study mode it sits next to the video in
-// fullscreen. Notes of other parts link to their part (and video moment or question).
+// The notes panel of a guide part: this part's notes (newest first), or with "Whole course" every note of the
+// course (this part first, then the other parts in order, which link to their part, video moment or question);
+// a filter by kind; and the composer. On wide screens it stays beside the video and the quiz; on phones it opens
+// from the "Notes" button as a bottom sheet; in study mode it sits next to the video in fullscreen. The PDF always
+// has the whole course.
 export function NotesPanel() {
   const n = useNotes();
   const { slug } = useGuide();
   const [filter, setFilter] = useState<Filter>("all");
+  const [scope, setScope] = useState<Scope>("part");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const box = useRef<HTMLTextAreaElement>(null);
@@ -80,8 +83,9 @@ export function NotesPanel() {
     n.setSheetOpen(false);
   };
 
-  const shown = n.notes.filter((x) => filter === "all" || x.kind === filter);
-  const count = (k: Filter) => (k === "all" ? n.notes.length : n.notes.filter((x) => x.kind === k).length);
+  const inScope = scope === "part" ? n.notes.filter((x) => x.part === n.part) : n.notes;
+  const shown = inScope.filter((x) => filter === "all" || x.kind === filter);
+  const count = (k: Filter) => (k === "all" ? inScope.length : inScope.filter((x) => x.kind === k).length);
   const here = n.notes.filter((x) => x.part === n.part).length;
   // Groups: this part, then the other parts in course order, then notes for the whole course (written on /app).
   const titles = new Map(n.parts.map((p) => [p.n, p.title]));
@@ -134,15 +138,12 @@ export function NotesPanel() {
         aria-controls="part-notes"
         onClick={() => n.setSheetOpen(!n.sheetOpen)}
       >
-        Notes · {n.notes.length}
+        Notes · {here}
       </button>
       {n.sheetOpen && <div className="np-shade" onClick={() => n.setSheetOpen(false)} />}
       <aside id="part-notes" className={n.sheetOpen ? "np open" : "np"} aria-label="Your notes">
         <div className="np-head">
           <b>Your notes</b>
-          <span>
-            {n.notes.length} in this course · {here} in this part
-          </span>
           {n.study && (
             <button type="button" className="np-exit" onClick={n.toggleStudy}>
               Exit study mode
@@ -150,6 +151,14 @@ export function NotesPanel() {
           )}
           <button type="button" className="np-close" onClick={() => n.setSheetOpen(false)} aria-label="Close notes">
             ×
+          </button>
+        </div>
+        <div className="np-seg" role="group" aria-label="Notes from">
+          <button type="button" aria-pressed={scope === "part"} onClick={() => setScope("part")}>
+            This part {here}
+          </button>
+          <button type="button" aria-pressed={scope === "course"} onClick={() => setScope("course")}>
+            Whole course {n.notes.length}
           </button>
         </div>
         <div className="np-seg" role="group" aria-label="Show">
@@ -161,13 +170,14 @@ export function NotesPanel() {
         </div>
 
         <div className="np-list">
-          {order.map((partN) => (
-            <section key={String(partN)} className="np-group" aria-label={partN === n.part ? "This part" : partN === null ? "Whole course" : `Part ${partN}`}>
+          {scope === "part" && shown.length > 0 && <ul className="np-flat">{shown.map(item)}</ul>}
+          {scope === "course" && order.map((partN) => (
+            <section key={String(partN)} className="np-group" aria-label={partN === n.part ? "This part" : partN === null ? "For the whole course" : `Part ${partN}`}>
               <h3>
                 {partN === n.part ? (
                   <>This part</>
                 ) : partN === null ? (
-                  <>Whole course</>
+                  <>For the whole course</>
                 ) : (
                   <Link href={`/app/guides/${slug}/${partN}`}>
                     Part {partN}
@@ -182,7 +192,9 @@ export function NotesPanel() {
             <p className="np-empty">
               {n.notes.length === 0
                 ? "No notes yet. Press N or the Note button on the video, or write one below."
-                : "Nothing here with this filter."}
+                : inScope.length === 0
+                  ? `No notes in this part yet. ${n.notes.length} in the rest of the course: press Whole course to see them.`
+                  : "Nothing here with this filter."}
             </p>
           )}
         </div>

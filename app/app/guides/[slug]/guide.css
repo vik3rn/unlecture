@@ -466,3 +466,4 @@
 .dg .np-group h3 a:hover { color: var(--accent); text-decoration: underline; }
 .dg .np-group ul { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .dg a.np-src.link { display: inline-flex; align-items: center; text-decoration: none; }
+.dg .np-flat { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
