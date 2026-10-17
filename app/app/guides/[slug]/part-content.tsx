@@ -16,8 +16,27 @@ const YT_ORIGIN = "https://www.youtube-nocookie.com";
 // LaLiga matches), the player switches to /api/video/stream on our own domain, which fetches the same file from R2
 // on the server. Once that was needed, later parts in this visit start there straight away.
 const STALL_MS = 7000;
+const PROBE_MS = 2500;
 let preferStream = false;
 type VideoLink = { url: string; stream: string | null };
+
+// Can the browser reach the R2 host at all? An opaque no-cors HEAD answers within a moment when it can; a blocked
+// address never answers, so after PROBE_MS the answer is no.
+function reachable(url: string) {
+  return new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => resolve(false), PROBE_MS);
+    fetch(url, { method: "HEAD", mode: "no-cors", cache: "no-store" }).then(
+      () => {
+        clearTimeout(timer);
+        resolve(true);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(false);
+      },
+    );
+  });
+}
 
 export function PartContent({ part, format }: { part: GuidePart; format: GuideFormat }) {
   const { slug, progress, update, rev } = useGuide();
@@ -95,13 +114,17 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
     return true;
   };
 
-  // Starts a link: the direct R2 file, watched for a stall, or the fallback when R2 was blocked earlier.
-  const play = (l: VideoLink, at: number | null) => {
+  // Starts a link: the direct R2 file when R2 answers (still watched for a stall), otherwise the fallback.
+  const play = async (l: VideoLink, at: number | null) => {
     link.current = l;
     pendingSeek.current = at;
-    const viaStream = preferStream && !!l.stream;
-    onStream.current = viaStream;
     clearStall();
+    let viaStream = preferStream && !!l.stream;
+    if (!viaStream && l.stream && !(await reachable(l.url))) {
+      viaStream = true;
+      preferStream = true;
+    }
+    onStream.current = viaStream;
     setVideoSrc(viaStream ? l.stream : l.url);
     if (!viaStream && l.stream) stall.current = setTimeout(switchToStream, STALL_MS);
   };
@@ -221,6 +244,8 @@ export function PartContent({ part, format }: { part: GuidePart; format: GuideFo
             onLoadedMetadata={(e) => {
               clearStall();
               retried.current = false;
+              // After a switch to the fallback the new file does not always start on its own.
+              if (onStream.current && e.currentTarget.paused) void e.currentTarget.play().catch(() => {});
               if (pendingSeek.current) e.currentTarget.currentTime = pendingSeek.current;
               pendingSeek.current = null;
             }}
