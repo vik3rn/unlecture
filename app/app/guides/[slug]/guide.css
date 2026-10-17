@@ -265,7 +265,7 @@
    checkboxes). The input is visually hidden but keeps keyboard focus, shown as a ring on the whole option. */
 .dg .opt input, .dg .gopt input { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
 .dg .opt:has(input:focus-visible), .dg .gopt:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
-.dg .q { scroll-margin-top: 72px; }
+.dg .q, .dg .sec > h2 { scroll-margin-top: 72px; }
 .dg .tally { margin: -4px 0 14px; font-size: 15px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .dg .tally b { color: var(--ink); }
 .dg .q .qh .qn { font-weight: 700; color: var(--ink); }

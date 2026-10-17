@@ -203,6 +203,15 @@ export function PartContent({
 
   useEffect(() => () => clearStall(), []);
 
+  // A note on /app or in the summary links to a question or the key points (#q-…-stem, #o-…-stem, #rem-n). The part
+  // streams in after the navigation, so scroll there once it is on the page.
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id) return;
+    const el = document.getElementById(id);
+    (el?.closest(".q") ?? el)?.scrollIntoView({ block: "start" });
+  }, []);
+
   const pausePlayer = () => {
     if (video.current) video.current.pause();
     else send("pauseVideo");
