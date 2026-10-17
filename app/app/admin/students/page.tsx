@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { isAdmin } from "@/lib/admin";
 import { guideMark, loadAdminData } from "@/lib/admin-data";
-import { studentLabel } from "@/lib/admin-metrics";
 import { formatDuration } from "@/lib/guide-time";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 // Every account (owner only): when it signed up and last signed in, the guides it uses, parts done, study time and
-// exam dates, plus the courses students ask guides for. Students show as short IDs; emails only with ?emails=1.
+// exam dates, plus the courses students ask guides for.
 export const metadata: Metadata = { title: "Students", robots: { index: false, follow: false } };
 
 const day = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Madrid" });
@@ -17,10 +15,9 @@ const when = (iso?: string | null) => (iso ? day.format(new Date(iso)) : "–");
 const calendarDay = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 const onDay = (d?: string | null) => (d ? calendarDay.format(new Date(`${d}T00:00:00Z`)) : "–");
 
-async function StudentsView({ searchParams }: { searchParams: PageProps<"/app/admin/students">["searchParams"] }) {
+async function StudentsView() {
   const me = await getCurrentUser();
   if (!me || !isAdmin(me.email)) notFound();
-  const showEmails = (await searchParams).emails === "1";
 
   const data = await loadAdminData();
   if (data.error !== null) {
@@ -74,24 +71,14 @@ async function StudentsView({ searchParams }: { searchParams: PageProps<"/app/ad
           <h1>Students</h1>
           <p>{users.length} accounts · newest first</p>
         </div>
-        <div className="ad-tools">
-          <Link href={showEmails ? "/app/admin/students" : "/app/admin/students?emails=1"} className="ad-btn">
-            {showEmails ? "Hide emails" : "Show emails"}
-          </Link>
-        </div>
       </header>
-      {showEmails && (
-        <p className="ad-note">
-          <b>Confidential.</b> Emails are visible. Do not share this page or copy the list anywhere else.
-        </p>
-      )}
 
       <section className="ad-card" aria-label="All accounts">
         <div className="ad-scroll">
           <table className="ad-table" style={{ minWidth: 820 }}>
             <thead>
               <tr>
-                <th scope="col">Student</th>
+                <th scope="col">Email</th>
                 <th scope="col">Signed up</th>
                 <th scope="col">Last sign-in</th>
                 <th scope="col">Guides</th>
@@ -110,9 +97,7 @@ async function StudentsView({ searchParams }: { searchParams: PageProps<"/app/ad
                 const x = per.get(u.id);
                 return (
                   <tr key={u.id}>
-                    <td className={showEmails ? undefined : "who"} style={showEmails ? { wordBreak: "break-all" } : undefined}>
-                      {showEmails ? u.email : studentLabel(u.id)}
-                    </td>
+                    <td style={{ wordBreak: "break-all" }}>{u.email ?? u.id}</td>
                     <td>{when(u.created_at)}</td>
                     <td>{when(u.last_sign_in_at)}</td>
                     <td>{x ? [...x.guides].map((g) => markOf.get(g) ?? "?").join(", ") : "–"}</td>
@@ -157,10 +142,10 @@ async function StudentsView({ searchParams }: { searchParams: PageProps<"/app/ad
   );
 }
 
-export default function AdminStudentsPage({ searchParams }: PageProps<"/app/admin/students">) {
+export default function AdminStudentsPage() {
   return (
     <Suspense fallback={<p className="ad-loading">Loading the students…</p>}>
-      <StudentsView searchParams={searchParams} />
+      <StudentsView />
     </Suspense>
   );
 }

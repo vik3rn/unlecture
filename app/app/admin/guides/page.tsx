@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { isAdmin } from "@/lib/admin";
 import { loadAdminData } from "@/lib/admin-data";
-import { studentLabel, type AdminProgress } from "@/lib/admin-metrics";
+import type { AdminProgress } from "@/lib/admin-metrics";
 import { dayIn, dayStart, formatDuration, OTHER_PART, summarizeTime, type UserTime } from "@/lib/guide-time";
 import { plain, questionKeys } from "@/lib/guides";
 import type { MockState } from "@/lib/progress";
@@ -12,7 +11,7 @@ import { bestScore, fmtPoints } from "@/lib/scoring";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 // Per guide (owner only): study time, parts done with time per part, the hardest questions, mock exams and the
-// guide's students. Students show as short IDs; emails only with ?emails=1 (the "Show emails" button).
+// guide's students by email.
 export const metadata: Metadata = { title: "Guides and questions", robots: { index: false, follow: false } };
 
 type Row = { user_id: string; guide_id: string; progress: AdminProgress; updated_at: string | null };
@@ -32,10 +31,9 @@ function today() {
   return dayIn(new Date());
 }
 
-async function GuidesView({ searchParams }: { searchParams: PageProps<"/app/admin/guides">["searchParams"] }) {
+async function GuidesView() {
   const me = await getCurrentUser();
   if (!me || !isAdmin(me.email)) notFound();
-  const showEmails = (await searchParams).emails === "1";
 
   const data = await loadAdminData();
   if (data.error !== null) {
@@ -46,7 +44,6 @@ async function GuidesView({ searchParams }: { searchParams: PageProps<"/app/admi
     );
   }
   const emailOf = new Map(data.users.map((u) => [u.id, u.email ?? "(no email)"]));
-  const who = (id: string) => (showEmails ? (emailOf.get(id) ?? id) : studentLabel(id));
   // Study time: "last 7 days" = today and the 6 days before, in the time zone the database uses for `day`.
   const time = summarizeTime(data.time.rows, dayStart(today(), 7));
   const timeOn = !data.time.missing && !data.time.error;
@@ -59,17 +56,7 @@ async function GuidesView({ searchParams }: { searchParams: PageProps<"/app/admi
           <h1>Guides and questions</h1>
           <p>Per guide: study time, parts, the hardest questions, mock exams and students</p>
         </div>
-        <div className="ad-tools">
-          <Link href={showEmails ? "/app/admin/guides" : "/app/admin/guides?emails=1"} className="ad-btn">
-            {showEmails ? "Hide emails" : "Show emails"}
-          </Link>
-        </div>
       </header>
-      {showEmails && (
-        <p className="ad-note">
-          <b>Confidential.</b> Emails are visible. Do not share this page or copy the list anywhere else.
-        </p>
-      )}
 
       {data.guides.map((g) => {
         const gt = time.guides.get(g.id);
@@ -292,7 +279,7 @@ async function GuidesView({ searchParams }: { searchParams: PageProps<"/app/admi
                 <table className="ad-table" style={{ minWidth: 760, marginTop: 6 }}>
                   <thead>
                     <tr>
-                      <th scope="col">Student</th>
+                      <th scope="col">Email</th>
                       <th scope="col" className="r">
                         Parts done
                       </th>
@@ -327,9 +314,7 @@ async function GuidesView({ searchParams }: { searchParams: PageProps<"/app/admi
                         const full = items.filter(({ q, key }) => isFull(quiz[key], q.correct)).length;
                         return (
                           <tr key={r.user_id}>
-                            <td className={showEmails ? undefined : "who"} style={showEmails ? { wordBreak: "break-all" } : undefined}>
-                              {who(r.user_id)}
-                            </td>
+                            <td style={{ wordBreak: "break-all" }}>{emailOf.get(r.user_id) ?? r.user_id}</td>
                             <td className="r">
                               {Object.keys(r.progress.done ?? {}).length}/{parts.length}
                             </td>
@@ -360,10 +345,10 @@ async function GuidesView({ searchParams }: { searchParams: PageProps<"/app/admi
   );
 }
 
-export default function AdminGuidesPage({ searchParams }: PageProps<"/app/admin/guides">) {
+export default function AdminGuidesPage() {
   return (
     <Suspense fallback={<p className="ad-loading">Loading the guides…</p>}>
-      <GuidesView searchParams={searchParams} />
+      <GuidesView />
     </Suspense>
   );
 }

@@ -313,6 +313,3 @@ export function computeOverview(input: OverviewInput) {
 }
 
 export type Overview = ReturnType<typeof computeOverview>;
-
-// "Student 3f2a91": a short, stable label instead of the email.
-export const studentLabel = (id: string) => `Student ${id.replace(/-/g, "").slice(0, 6)}`;
