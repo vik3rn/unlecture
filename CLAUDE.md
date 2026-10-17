@@ -29,9 +29,9 @@ An automated bot grades this app on its public Vercel URL, acting like a strange
 
 ## Product: Unlecture
 
-**One-liner:** Unlecture exam guides take IE students through a course step by step before the exam, so they know what to expect on exam day.
+**One-liner:** Unlecture helps IE BBA 3rd-year students study each course step by step, with every note kept in one summary.
 
-- **Who:** IE University students with an exam in the next two weeks.
+- **Who:** IE BBA 3rd-year students with an exam in the next two weeks (the landing page says so in its first line).
 - **Exam guides:** curated by the project owner and stored in the `guides` table (read-only for users; content is loaded with a seed SQL file that is NOT in this repo). A guide has a course overview (`/app/guides/[slug]`) and one page per part (`/app/guides/[slug]/[part]`); progress lives in the guide layout (`progress.tsx`). One guide = parts with an embedded video (unlisted, `youtube-nocookie`, loaded only when the student presses play), chapters, key points, exam-style quizzes (pick two of six) and paper exercises.
 - **Exam formats:** a guide may set `content.format` (e.g. 4 options, 1 correct, 0.5 points, −25 % for a wrong answer, blanks allowed). Then quizzes are single-answer and scored in exam points, parts can have open questions (`opens`: line limit, model answer, rubric, self-grade) and the guide can have timed mock exams (`mocks`, route `/app/guides/[slug]/mock/[id]`, logged-in only; locked in the free preview). Without `format` a guide keeps the DAE rules (pick two of six). Parser: `lib/guides.ts`; scoring: `lib/scoring.ts`.
 - **Progress:** quiz answers and "done" marks are saved per user in `guide_progress` (RLS: own rows only) through a server action that validates the shape (`lib/progress.ts`: also single answers, open answers up to 2,000 characters, self-grades and mock attempts; rows over ~98 KB are refused with a clear message because the table allows 100,000 bytes). Saving, retrying a failed save and re-reading the saved row when a tab comes back into view (so a second tab or device cannot overwrite a submitted mock with an old copy) are in `lib/progress-sync.ts`; the read goes through `GET /api/guide-progress?guide=<id>` (own row only, never cached).
