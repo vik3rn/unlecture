@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { plain, type GuideFormat, type GuidePart } from "@/lib/guides";
 import type { Note } from "@/lib/notes";
-import { NotesProvider, useNotes } from "./notes-context";
+import { NotesProvider, useNotes, type PartTitle } from "./notes-context";
 import { NotesPanel } from "./notes-panel";
 import { PartContent } from "./part-content";
 import { saveFailed, saveLabel, useGuide } from "./progress";
@@ -19,8 +19,9 @@ type PartViewProps = {
   last: number; // number of the last part (parts may start at 0)
   brand: string;
   format: GuideFormat;
-  // Logged in only: the guide's id and the student's notes for this part (the free preview has no notes).
-  notes?: { guideId: string; items: Note[] };
+  // Logged in only: the guide's id, its parts and the student's notes for the whole course (the free preview has
+  // no notes).
+  notes?: { guideId: string; items: Note[]; parts: PartTitle[] };
   startAt?: number | null; // ?t= from a note: the video starts there
 };
 
@@ -30,6 +31,7 @@ export function PartView(props: PartViewProps) {
       enabled={!!props.notes}
       guideId={props.notes?.guideId ?? ""}
       part={props.part}
+      parts={props.notes?.parts ?? []}
       initial={props.notes?.items ?? []}
     >
       <PartBody {...props} />

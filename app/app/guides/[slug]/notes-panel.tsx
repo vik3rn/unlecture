@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { clock, NOTE_MAX, type Note } from "@/lib/notes";
+import { clock, NOTE_MAX, noteHref, refLabel, type Note } from "@/lib/notes";
 import { useNotes } from "./notes-context";
+import { useGuide } from "./progress";
 
 type Filter = "all" | "note" | "question";
 
-// The notes panel of a guide part: the part's notes (newest first, filter by kind), and the composer. On wide
-// screens it stays beside the video and the quiz; on phones it opens from the "Notes" button as a bottom sheet;
-// in study mode it sits next to the video in fullscreen.
+// The notes panel of a guide part: every note of the course (this part first, then the other parts in order;
+// newest first inside a part; filter by kind), and the composer. On wide screens it stays beside the video and the
+// quiz; on phones it opens from the "Notes" button as a bottom sheet; in study mode it sits next to the video in
+// fullscreen. Notes of other parts link to their part (and video moment or question).
 export function NotesPanel() {
   const n = useNotes();
+  const { slug } = useGuide();
   const [filter, setFilter] = useState<Filter>("all");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -79,6 +82,48 @@ export function NotesPanel() {
 
   const shown = n.notes.filter((x) => filter === "all" || x.kind === filter);
   const count = (k: Filter) => (k === "all" ? n.notes.length : n.notes.filter((x) => x.kind === k).length);
+  const here = n.notes.filter((x) => x.part === n.part).length;
+  // Groups: this part, then the other parts in course order, then notes for the whole course (written on /app).
+  const titles = new Map(n.parts.map((p) => [p.n, p.title]));
+  const byPart = new Map<number | null, Note[]>();
+  for (const x of shown) byPart.set(x.part, [...(byPart.get(x.part) ?? []), x]);
+  const order = [...byPart.keys()].sort((a, b) =>
+    a === n.part ? -1 : b === n.part ? 1 : a === null ? 1 : b === null ? -1 : a - b,
+  );
+
+  const item = (x: Note) => {
+    const local = x.part === n.part;
+    const q = local && x.ref ? qByKey.get(x.ref) : undefined;
+    const away = x.video_at !== null ? `▶ ${clock(x.video_at)}` : refLabel(x.ref);
+    return (
+      <li key={x.id} className={x.kind === "question" ? "np-item ask" : "np-item"}>
+        <span className="np-meta">
+          <span className="np-kind">{x.kind === "question" ? "Question" : "Note"}</span>
+          {!local ? (
+            away && (
+              <Link className="np-src link" href={noteHref(slug, x)}>
+                {away}
+              </Link>
+            )
+          ) : x.video_at !== null ? (
+            <button type="button" className="np-at" onClick={() => n.player()?.seek(x.video_at as number)}>
+              ▶ {clock(x.video_at)}
+            </button>
+          ) : q ? (
+            <button type="button" className="np-src link" onClick={() => jump(q.key)}>
+              {q.label}
+            </button>
+          ) : x.source === "keypoint" ? (
+            <span className="np-src">Key point</span>
+          ) : null}
+          <button type="button" className="np-del" onClick={() => n.remove(x.id)} aria-label={`Delete note: ${x.body.slice(0, 60)}`}>
+            Delete
+          </button>
+        </span>
+        <span className="np-body">{x.body}</span>
+      </li>
+    );
+  };
 
   return (
     <>
@@ -95,7 +140,9 @@ export function NotesPanel() {
       <aside id="part-notes" className={n.sheetOpen ? "np open" : "np"} aria-label="Your notes">
         <div className="np-head">
           <b>Your notes</b>
-          <span>{n.notes.length === 1 ? "1 note" : `${n.notes.length} notes`} in this part</span>
+          <span>
+            {n.notes.length} in this course · {here} in this part
+          </span>
           {n.study && (
             <button type="button" className="np-exit" onClick={n.toggleStudy}>
               Exit study mode
@@ -113,45 +160,32 @@ export function NotesPanel() {
           ))}
         </div>
 
-        <ul className="np-list">
-          {shown.map((x) => {
-            const q = x.ref ? qByKey.get(x.ref) : undefined;
-            return (
-              <li key={x.id} className={x.kind === "question" ? "np-item ask" : "np-item"}>
-                <span className="np-meta">
-                  <span className="np-kind">{x.kind === "question" ? "Question" : "Note"}</span>
-                  {x.video_at !== null ? (
-                    <button type="button" className="np-at" onClick={() => n.player()?.seek(x.video_at as number)}>
-                      ▶ {clock(x.video_at)}
-                    </button>
-                  ) : q ? (
-                    <button type="button" className="np-src link" onClick={() => jump(q.key)}>
-                      {q.label}
-                    </button>
-                  ) : x.source === "keypoint" ? (
-                    <span className="np-src">Key point</span>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="np-del"
-                    onClick={() => n.remove(x.id)}
-                    aria-label={`Delete note: ${x.body.slice(0, 60)}`}
-                  >
-                    Delete
-                  </button>
-                </span>
-                <span className="np-body">{x.body}</span>
-              </li>
-            );
-          })}
+        <div className="np-list">
+          {order.map((partN) => (
+            <section key={String(partN)} className="np-group" aria-label={partN === n.part ? "This part" : partN === null ? "Whole course" : `Part ${partN}`}>
+              <h3>
+                {partN === n.part ? (
+                  <>This part</>
+                ) : partN === null ? (
+                  <>Whole course</>
+                ) : (
+                  <Link href={`/app/guides/${slug}/${partN}`}>
+                    Part {partN}
+                    {titles.get(partN) ? ` · ${titles.get(partN)}` : ""}
+                  </Link>
+                )}
+              </h3>
+              <ul>{(byPart.get(partN) ?? []).map(item)}</ul>
+            </section>
+          ))}
           {shown.length === 0 && (
-            <li className="np-empty">
+            <p className="np-empty">
               {n.notes.length === 0
                 ? "No notes yet. Press N or the Note button on the video, or write one below."
                 : "Nothing here with this filter."}
-            </li>
+            </p>
           )}
-        </ul>
+        </div>
 
         <form
           className="np-form"
@@ -252,7 +286,7 @@ export function NotesPanel() {
 
         <div className="np-foot">
           <Link href={`/app/notes/print?guide=${n.guideId}`} target="_blank" className="np-export">
-            Export notes as PDF
+            Export course notes as PDF
           </Link>
           <Link href="/app#notes">All my notes</Link>
         </div>

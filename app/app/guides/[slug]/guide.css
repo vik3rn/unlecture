@@ -458,3 +458,11 @@
 .dg .pv.study .vt-study { border-color: var(--accent); color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .dg .np, .dg .np.open { transition: none; } }
 @media print { .dg .np, .dg .np-fab, .dg .vtools, .dg .rp-save, .dg .qn { display: none !important; } }
+/* notes of the whole course in the panel: one group per part, this part first */
+.dg .np-list { gap: 12px; }
+.dg .np-group { flex: none; }
+.dg .np-group h3 { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); }
+.dg .np-group h3 a { color: var(--ink-2); text-decoration: none; text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 650; }
+.dg .np-group h3 a:hover { color: var(--accent); text-decoration: underline; }
+.dg .np-group ul { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.dg a.np-src.link { display: inline-flex; align-items: center; text-decoration: none; }

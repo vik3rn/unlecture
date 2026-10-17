@@ -312,7 +312,9 @@ export function PartContent({
     await notes.add({ body: plain(html).slice(0, NOTE_MAX), kind: "note", source: "keypoint", ref });
     setSavingKey(null);
   };
-  const marks = notes.enabled && dur ? notes.notes.filter((x) => x.video_at !== null && x.video_at <= dur) : [];
+  // The panel holds the whole course's notes; the marks and "In your notes" are about this part only.
+  const mine = notes.notes.filter((x) => x.part === part.n);
+  const marks = notes.enabled && dur ? mine.filter((x) => x.video_at !== null && x.video_at <= dur) : [];
 
   return (
     <>
@@ -451,7 +453,7 @@ export function PartContent({
           <div className="remember">
             {part.recaps.map((r, i) => {
               const ref = `r${i}`;
-              const saved = notes.notes.some((x) => x.ref === ref);
+              const saved = mine.some((x) => x.ref === ref);
               return (
                 <div key={r} className="rp-row">
                   <Html html={r} block className="rp" />

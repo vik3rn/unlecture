@@ -11,6 +11,7 @@ import { deleteNote, saveNote } from "../../notes-actions";
 // (the video and the notes together in fullscreen). In the free preview (guest) notes are off.
 
 export type QuizRef = { key: string; label: string; stem: string };
+export type PartTitle = { n: number; title: string };
 // The composer's settings. `tick` goes up each time something opens it, so the panel can focus the text box.
 export type Compose = { kind: NoteKind; source: NoteSource; ref: string | null; videoAt: number | null; resume: boolean; tick: number };
 const BLANK: Omit<Compose, "tick"> = { kind: "note", source: "general", ref: null, videoAt: null, resume: false };
@@ -20,7 +21,8 @@ type NotesState = {
   enabled: boolean;
   guideId: string;
   part: number;
-  notes: Note[];
+  parts: PartTitle[]; // every part of the guide, for the notes of other parts
+  notes: Note[]; // the whole course's notes
   error: string | null;
   questions: QuizRef[];
   add: (input: NoteInput) => Promise<boolean>;
@@ -47,6 +49,7 @@ const OFF: NotesState = {
   enabled: false,
   guideId: "",
   part: 0,
+  parts: [],
   notes: [],
   error: null,
   questions: [],
@@ -72,12 +75,14 @@ export function NotesProvider({
   enabled,
   guideId,
   part,
+  parts,
   initial,
   children,
 }: {
   enabled: boolean;
   guideId: string;
   part: GuidePart;
+  parts: PartTitle[];
   initial: Note[];
   children: React.ReactNode;
 }) {
@@ -166,6 +171,7 @@ export function NotesProvider({
             enabled,
             guideId,
             part: part.n,
+            parts,
             notes,
             error,
             questions,
@@ -187,7 +193,7 @@ export function NotesProvider({
             setRoot,
           }
         : OFF,
-    [enabled, guideId, part.n, notes, error, questions, add, remove, compose, openCompose, patchCompose, closeCompose, lastQuestion,
+    [enabled, guideId, part.n, parts, notes, error, questions, add, remove, compose, openCompose, patchCompose, closeCompose, lastQuestion,
       registerPlayer, player, sheetOpen, study, studyAvailable, toggleStudy, setRoot],
   );
   return <NotesContext value={value}>{children}</NotesContext>;

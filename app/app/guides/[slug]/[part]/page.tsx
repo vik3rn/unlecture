@@ -8,8 +8,8 @@ import { PartView } from "../part-view";
 
 export const metadata: Metadata = { title: "Exam guide" };
 
-// One part of a guide: video, key points, quiz and exercises, with previous/next, and the student's notes for
-// this part. ?t=<seconds> (from a note on /app) starts the video at that moment.
+// One part of a guide: video, key points, quiz and exercises, with previous/next, and the student's notes for the
+// whole course (the panel shows this part first). ?t=<seconds> (from a note) starts the video at that moment.
 async function Part({ slug, n, t }: { slug: string; n: string; t: string | string[] | undefined }) {
   const num = Number(n);
   if (!/^\d{1,3}$/.test(n) || !Number.isInteger(num)) notFound();
@@ -24,9 +24,8 @@ async function Part({ slug, n, t }: { slug: string; n: string; t: string | strin
     .from("notes")
     .select(NOTE_COLUMNS)
     .eq("guide_id", guide.id)
-    .eq("part", num)
     .order("created_at", { ascending: false })
-    .limit(300);
+    .limit(1000);
   const startAt = typeof t === "string" && /^\d{1,5}$/.test(t) ? Math.min(36000, Number(t)) : null;
   const link = (j: number) => (c.parts[j] ? { n: c.parts[j].n, title: c.parts[j].title, locked: false } : null);
   return (
@@ -38,7 +37,11 @@ async function Part({ slug, n, t }: { slug: string; n: string; t: string | strin
       last={c.parts.at(-1)?.n ?? 0}
       brand={plain(c.brand) || plain(guide.title as string).split(":")[0]}
       format={c.format}
-      notes={{ guideId: guide.id as string, items: (notes ?? []) as Note[] }}
+      notes={{
+        guideId: guide.id as string,
+        items: (notes ?? []) as Note[],
+        parts: c.parts.map((p) => ({ n: p.n, title: plain(p.title) })),
+      }}
       startAt={startAt}
     />
   );
