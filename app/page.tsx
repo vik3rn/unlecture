@@ -7,6 +7,7 @@ import "./landing.css";
 // Public landing page (grading contract in CLAUDE.md): what Unlecture does, who it is for, and ONE sign-up button
 // to /signup. Logged-in students get "Go to my guides" there instead. The first screen puts the courses up front:
 // a course list next to examples from the guides that flip every 5 seconds (app/components/landing-examples.tsx).
+// "Your notes become your summary" explains the main feature (notes, /app) with a small summary preview.
 // Styles live in landing.css, scoped to .lp, and the page fills wide screens (max 1440 px). Only the parts that
 // depend on the login stream in (Suspense); the rest is static. No fixed exam date: students from several classes
 // use the guides and add their own date. A new guide gets a course card with its slug (free preview for guests,
@@ -17,6 +18,12 @@ const steps = [
   { name: "Remember", text: "The key points of each part, in a few lines.", warm: false },
   { name: "Quiz", text: "Questions in the real exam format, with an explanation for every option.", warm: false },
   { name: "Paper", text: "Worked exercises to solve by hand, then open the answer.", warm: true },
+];
+
+const notePoints = [
+  { title: "Note the moment", text: "Press N while a video plays. The note keeps the time, so one click takes you back." },
+  { title: "Mark what you don't get", text: "\u201cI don\u2019t understand this one\u201d on any quiz question, in one click." },
+  { title: "One summary", text: "Before the exam: questions to clear up, key points and all your notes. Or a PDF." },
 ];
 
 const keeps = [
@@ -147,6 +154,48 @@ export default function Home() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      <section className="band" aria-labelledby="notes-title">
+        <div className="wrap notes-grid">
+          <div className="text">
+            <h2 id="notes-title">Your notes become your summary</h2>
+            <p>Write down what you want to remember and what you still don&apos;t get, right where you study.</p>
+            <ul className="note-points">
+              {notePoints.map((n) => (
+                <li key={n.title}>
+                  <b>{n.title}</b>
+                  <span>{n.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {/* A picture of the summary page (decorative; the list above says the same in words). */}
+          <div className="sum-card" aria-hidden="true">
+            <span className="sc-cap">Summary of your notes</span>
+            <span className="sc-title">Management Control</span>
+            <div className="sc-q">
+              <span className="no">1</span>
+              <span>Why is production 6,000 and not 7,000?</span>
+            </div>
+            <div className="sc-q">
+              <span className="no">2</span>
+              <span>With idle capacity, is the opportunity cost zero?</span>
+            </div>
+            <div className="sc-n">
+              <span className="at">4:28</span>
+              <span>Production = sales + ending − beginning</span>
+            </div>
+            <div className="sc-n">
+              <span className="at">9:05</span>
+              <span>Cross-subsidy: big orders pay for the small ones</span>
+            </div>
+            <div className="sc-acts">
+              <span className="primary">Export PDF</span>
+              <span>Copy as text</span>
+            </div>
+          </div>
         </div>
       </section>
 
